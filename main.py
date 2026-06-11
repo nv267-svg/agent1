@@ -91,7 +91,7 @@ def handle_root():
         params = body.get("params", {})
         task_id = params.get("id") or str(uuid.uuid4())
 
-        if method not in ("tasks/send", "tasks/sendSubscribe"):
+        if method not in ("tasks/send", "tasks/sendSubscribe", "message/send", "message/sendSubscribe"):
             return jsonify({
                 "jsonrpc": "2.0",
                 "id": body.get("id"),
