@@ -7,7 +7,8 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 
 ENV UV_PROJECT_ENVIRONMENT=/app/.venv
-RUN uv sync
+
+RUN uv sync --no-install-project
 
 COPY . .
 
