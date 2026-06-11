@@ -1,3 +1,4 @@
+import os
 import requests
 
 schema = """
@@ -16,15 +17,15 @@ Days_to_Harvest
 Yield_tons_per_hectare
 """
 
-def generate_sql(question):
 
+def generate_sql(question):
     api_base = os.getenv("LLM_API_BASE", "http://localhost:11434/v1")
     model = os.getenv("LLM_MODEL", "llama3")
 
     prompt = f"""
     You are a SQLite SQL generator.
 
-    Return ONLY SQL.
+    Return ONLY the raw SQL query, no explanations, no markdown, no backticks.
     Return ONLY the columns asked for.
 
     Schema:
@@ -35,12 +36,14 @@ def generate_sql(question):
     """
 
     response = requests.post(
-        "http://localhost:11434/api/generate",
+        f"{api_base}/chat/completions",
+        headers={"Authorization": f"Bearer {os.getenv('LLM_API_KEY', 'dummy')}"},
         json={
             "model": model,
-            "prompt": prompt,
-            "stream": False
-        }
+            "messages": [{"role": "user", "content": prompt}],
+            "stream": False,
+        },
+        timeout=60,
     )
-
-    return response.json()["response"]
+    response.raise_for_status()
+    return response.json()["choices"][0]["message"]["content"].strip()
