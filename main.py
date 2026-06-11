@@ -10,6 +10,10 @@ app = Flask(__name__)
 def health_check():
     return jsonify({"status": "healthy"}), 200
 
+@app.route('/')
+def home():
+    return "Agent is running on 8080", 200
+
 @app.route("/", methods=["POST"])
 def handle_kagenti_request():
     data = request.get_json()
