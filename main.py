@@ -9,9 +9,11 @@ app = Flask(__name__)
 
 AGENT_NAME = "crop1"
 AGENT_VERSION = "0.0.1"
-AGENT_DESCRIPTION = "A crop data agent that answers questions about crop yields, soil types, weather conditions, and more using natural language to SQL."
+AGENT_DESCRIPTION = (
+    "A crop data agent that answers questions about crop yields, "
+    "soil types, weather conditions, and more using natural language to SQL."
+)
 AGENT_ENDPOINT = os.getenv("AGENT_ENDPOINT", "http://localhost:8080")
-
 
 AGENT_CARD = {
     "name": AGENT_NAME,
@@ -39,17 +41,17 @@ AGENT_CARD = {
 }
 
 
+# Support both discovery URLs
 @app.route("/.well-known/agent.json", methods=["GET"])
+@app.route("/.well-known/agent-card.json", methods=["GET"])
 def agent_card():
-    """A2A agent discovery endpoint."""
     return jsonify(AGENT_CARD), 200
 
 
-
 def run_task(question: str) -> dict:
-    """Run the crop query and return an A2A-shaped result."""
     try:
         sql_query = generate_sql(question)
+
         conn = sqlite3.connect("/app/crop.db")
         df = pd.read_sql_query(sql_query, conn)
         conn.close()
@@ -64,6 +66,7 @@ def run_task(question: str) -> dict:
             "sql": sql_query,
             "answer": answer_text,
         }
+
     except Exception as e:
         return {
             "status": "failed",
@@ -73,13 +76,17 @@ def run_task(question: str) -> dict:
 
 @app.route("/", methods=["GET", "POST"])
 def handle_root():
-    # Health check
+
     if request.method == "GET":
-        return jsonify({"status": "healthy", "agent": AGENT_NAME}), 200
+        return jsonify({
+            "status": "healthy",
+            "agent": AGENT_NAME
+        }), 200
 
     body = request.get_json(silent=True) or {}
 
     if "method" in body:
+
         method = body.get("method", "")
         params = body.get("params", {})
         task_id = params.get("id") or str(uuid.uuid4())
@@ -88,11 +95,15 @@ def handle_root():
             return jsonify({
                 "jsonrpc": "2.0",
                 "id": body.get("id"),
-                "error": {"code": -32601, "message": f"Method not found: {method}"},
+                "error": {
+                    "code": -32601,
+                    "message": f"Method not found: {method}"
+                },
             }), 404
 
         message = params.get("message", {})
         parts = message.get("parts", [])
+
         question = ""
         for part in parts:
             if part.get("type") == "text":
@@ -103,17 +114,32 @@ def handle_root():
             return jsonify({
                 "jsonrpc": "2.0",
                 "id": body.get("id"),
-                "error": {"code": -32602, "message": "No question text found in message parts"},
+                "error": {
+                    "code": -32602,
+                    "message": "No question text found in message parts"
+                },
             }), 400
 
         result = run_task(question)
 
-        task_state = "completed" if result["status"] == "completed" else "failed"
+        task_state = (
+            "completed"
+            if result["status"] == "completed"
+            else "failed"
+        )
+
         artifact_parts = []
+
         if result["status"] == "completed":
             artifact_parts = [
-                {"type": "text", "text": result["answer"]},
-                {"type": "text", "text": f"SQL: {result['sql']}"},
+                {
+                    "type": "text",
+                    "text": result["answer"]
+                },
+                {
+                    "type": "text",
+                    "text": f"SQL: {result['sql']}"
+                }
             ]
 
         return jsonify({
@@ -121,26 +147,40 @@ def handle_root():
             "id": body.get("id"),
             "result": {
                 "id": task_id,
-                "status": {"state": task_state},
-                "artifacts": [{"parts": artifact_parts}] if artifact_parts else [],
+                "status": {
+                    "state": task_state
+                },
+                "artifacts": (
+                    [{"parts": artifact_parts}]
+                    if artifact_parts
+                    else []
+                ),
             },
         }), 200
 
-    else:
-        question = body.get("question", "")
-        if not question.strip():
-            return jsonify({"error": "no question provided"}), 400
+    question = body.get("question", "")
 
-        result = run_task(question)
-        if result["status"] == "failed":
-            return jsonify({"error": result["error"]}), 500
-
+    if not question.strip():
         return jsonify({
-            "sql": result["sql"],
-            "answer": result["answer"],
-        }), 200
+            "error": "no question provided"
+        }), 400
+
+    result = run_task(question)
+
+    if result["status"] == "failed":
+        return jsonify({
+            "error": result["error"]
+        }), 500
+
+    return jsonify({
+        "sql": result["sql"],
+        "answer": result["answer"],
+    }), 200
 
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8080))
-    app.run(host="0.0.0.0", port=port)
+    app.run(
+        host="0.0.0.0",
+        port=port,
+    )
