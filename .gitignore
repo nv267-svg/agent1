@@ -1,2 +1,5 @@
 venv/
 t
+.venv/
+venv/
+crop.db
