@@ -1,15 +1,24 @@
-import sys
+import os
 import sqlite3
 import pandas as pd
+from flask import Flask, request, jsonify
 from text_to_sql import generate_sql
-import requests
+
+app = Flask(__name__)
+
+@app.route("/", methods=["GET"])
+def health_check():
+    return jsonify({"status": "healthy"}), 200
+
+@app.route("/", methods=["POST"])
 def handle_kagenti_request():
-    if len(sys.argv) < 2:
-        print("Error: No question provided by Kagenti interface.")
-        sys.exit(1)
-        
-    user_question = " ".join(sys.argv[1:])
+    data = request.get_json()
     
+    user_question = data.get("question", "") if data else ""
+    
+    if not user_question.strip():
+        return jsonify({"error": "no question"}), 400
+        
     try:
         sql_query = generate_sql(user_question)
         
@@ -18,12 +27,16 @@ def handle_kagenti_request():
         conn.close()
         
         if df.empty:
-            print("No matching data found in the crop database.")
-        else:
-            print(df.to_string(index=False))
+            return jsonify({"answer": "not possible"}), 200
+        
+        return jsonify({
+            "query": sql_query,
+            "answer": df.to_dict(orient="records")
+        }), 200
             
     except Exception as e:
-        print(f"An execution error occurred: {str(e)}")
+        return jsonify({"error": f"An execution error occurred: {str(e)}"}), 500
 
 if __name__ == "__main__":
-    handle_kagenti_request()
+    port = int(os.getenv("PORT", 8080))
+    app.run(host="0.0.0.0", port=port)
