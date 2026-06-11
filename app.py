@@ -2,7 +2,7 @@ from flask import Flask, request, render_template_string
 import sqlite3
 import pandas as pd
 
-from text_to_sql import generate_sql
+from graph import crop_agent
 
 app = Flask(__name__)
 
@@ -41,6 +41,10 @@ HTML = """
 </html>
 """
 
+@app.route("/ping")
+def ping():
+    return "Flask is working", 200
+
 @app.route("/", methods=["GET", "POST"])
 def home():
 
@@ -53,13 +57,23 @@ def home():
         question = request.form["question"]
 
         try:
-            sql_query = generate_sql(question)
-            conn = sqlite3.connect("crop.db")
-            df = pd.read_sql_query(sql_query, conn)
-            result_html = df.head(100).to_html(index=False)
+            final_state = crop_agent.invoke({
+                "question": question,
+                "sql_query": None,
+                "rows": None,
+                "error": None
+            })
 
-            conn.close()
-
+            if final_state.get("error"):
+                error = final_state["error"]
+            else: 
+                sql_query = final_state.get("sql_query", "")
+                rows = final_state.get("rows") or []
+                if rows:
+                    df = pd.DataFrame(rows)
+                    result_html = df.to_html(index=False)
+                else:
+                    result_html = "<p>No results found.</p>"
         except Exception as e:
             error = str(e)
 
