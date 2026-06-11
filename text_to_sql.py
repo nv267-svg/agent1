@@ -18,6 +18,9 @@ Yield_tons_per_hectare
 
 def generate_sql(question):
 
+    api_base = os.getenv("LLM_API_BASE", "http://localhost:11434/v1")
+    model = os.getenv("LLM_MODEL", "llama3")
+
     prompt = f"""
     You are a SQLite SQL generator.
 
@@ -34,7 +37,7 @@ def generate_sql(question):
     response = requests.post(
         "http://localhost:11434/api/generate",
         json={
-            "model": "llama3",
+            "model": model,
             "prompt": prompt,
             "stream": False
         }
