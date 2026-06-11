@@ -57,7 +57,8 @@ def home():
         question = request.form["question"]
 
         try:
-            final_state = crop_agent.invoke({
+            #the initial state of the agent is a dictionary with only the question so far
+            final_state = crop_agent.invoke({ 
                 "question": question,
                 "sql_query": None,
                 "rows": None,

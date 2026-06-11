@@ -44,8 +44,9 @@ def generate_sql_node(state: AgentState) -> AgentState:
     {SCHEMA}
 
     Question:
-    {state['question']} #access the dictionary
+    {state['question']} 
     """
+#state[question] accesses the question key in the state dictionary.
 
     try: 
         response = llm.invoke(([HumanMessage(content=prompt)]))
@@ -65,7 +66,7 @@ def execute_sql_node(state: AgentState) -> AgentState:
          df = pd.read_sql_query(state["sql_query"], conn)         
          conn.close()
          rows = df.head(100).to_dict(orient="records") #converts dataframe to list of dictionaries
-         return {**state, "rows": rows, "error": None} #copies the dictionary and edits the rows and error keys
+         return {**state, "rows": rows, "error": None} #copies the dictionary and edits the rows and error keys, and RETURNS
      except Exception as e:       
             return {**state, "rows": None, "error": f"SQL Error: {str(e)}"}
 
@@ -81,7 +82,9 @@ def build_graph():
 
      return graph.compile()
 
-crop_agent = build_graph()
+
+#compiles the graph and returns an agent that can be invoked with an initial state
+crop_agent = build_graph() 
 
 
 
