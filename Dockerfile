@@ -1,13 +1,6 @@
 FROM python:3.12-slim
-
 WORKDIR /app
-
-RUN pip install uv
-
+# This line is the secret: it installs the tools permanently into the container
+RUN pip install flask pandas
 COPY . .
-
-RUN uv sync
-
-EXPOSE 8080
-
-CMD ["uv", "run", "python", "main.py"]
+CMD ["python", "main.py"]
