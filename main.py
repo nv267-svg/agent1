@@ -6,18 +6,12 @@ from text_to_sql import generate_sql
 
 app = Flask(__name__)
 
-@app.route("/", methods=["GET"])
-def health_check():
-    return jsonify({"status": "healthy"}), 200
-
-@app.route('/')
-def home():
-    return "Agent is running on 8080", 200
-
-@app.route("/", methods=["POST"])
-def handle_kagenti_request():
-    data = request.get_json()
+@app.route("/", methods=["GET", "POST"])
+def handle_root():
+    if request.method == "GET":
+        return jsonify({"status": "healthy"}), 200
     
+    data = request.get_json()
     user_question = data.get("question", "") if data else ""
     
     if not user_question.strip():
@@ -25,7 +19,6 @@ def handle_kagenti_request():
         
     try:
         sql_query = generate_sql(user_question)
-        
         conn = sqlite3.connect("crop.db")
         df = pd.read_sql_query(sql_query, conn)
         conn.close()
