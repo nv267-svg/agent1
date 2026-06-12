@@ -84,6 +84,7 @@ def handle_root():
         }), 200
 
     body = request.get_json(silent=True) or {}
+    print("DEBUG FULL BODY:", body, flush=True)
 
     if "method" in body:
 
