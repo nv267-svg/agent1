@@ -2,10 +2,14 @@ from typing import TypedDict, Optional
 from langgraph.graph import StateGraph, START, END
 from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
- 
+import os
 import sqlite3
 import pandas as pd
 import requests
+
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+OLLAMA_MODEL    = os.getenv("OLLAMA_MODEL",    "llama3.2:3b-instruct-fp16")
+DB_PATH         = os.getenv("DB_PATH",         "crop.db")
 
 SCHEMA = """
 Table: crop
@@ -23,8 +27,6 @@ Days_to_Harvest
 Yield_tons_per_hectare
 """
 
-DB_PATH = "crop.db"
-
 class AgentState(TypedDict):
     question: str
     sql_query: Optional[str]
@@ -33,7 +35,7 @@ class AgentState(TypedDict):
     
 #node1: generate SQL from question
 def generate_sql_node(state: AgentState) -> AgentState:
-    llm = ChatOllama(model="llama3.2:3b-instruct-fp16", base_url="http://localhost:11434", temperature=0)
+    llm = ChatOllama(model=OLLAMA_MODEL, base_url=OLLAMA_BASE_URL, temperature=0)
     prompt = f"""
     You are a SQLite SQL generator.
 
@@ -46,7 +48,7 @@ def generate_sql_node(state: AgentState) -> AgentState:
     Question:
     {state['question']} 
     """
-#state[question] accesses the question key in the state dictionary.
+# ^^ state[question] accesses the question key in the state dictionary.
 
     try: 
         response = llm.invoke(([HumanMessage(content=prompt)]))
