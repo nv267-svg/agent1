@@ -41,7 +41,6 @@ AGENT_CARD = {
 }
 
 
-# Support both discovery URLs
 @app.route("/.well-known/agent.json", methods=["GET"])
 @app.route("/.well-known/agent-card.json", methods=["GET"])
 def agent_card():
@@ -56,132 +55,112 @@ def run_task(question: str) -> dict:
         df = pd.read_sql_query(sql_query, conn)
         conn.close()
 
-        if df.empty:
-            answer_text = "No results found for that query."
-        else:
-            answer_text = df.to_json(orient="records")
+        answer_text = (
+            "No results found for that query."
+            if df.empty
+            else df.to_json(orient="records")
+        )
 
-        return {
-            "status": "completed",
-            "sql": sql_query,
-            "answer": answer_text,
-        }
+        return {"status": "completed", "sql": sql_query, "answer": answer_text}
 
     except Exception as e:
-        return {
-            "status": "failed",
-            "error": str(e),
-        }
+        return {"status": "failed", "error": str(e)}
+
+
+def extract_question(params: dict) -> str:
+    """Try every known Kagenti/A2A payload shape to find the question text."""
+
+    parts = params.get("message", {}).get("parts", [])
+    for part in parts:
+        if part.get("type") == "text" and part.get("text", "").strip():
+            return part["text"].strip()
+
+    parts = params.get("parts", [])
+    for part in parts:
+        if part.get("type") == "text" and part.get("text", "").strip():
+            return part["text"].strip()
+
+    parts = params.get("input", {}).get("parts", []) if isinstance(params.get("input"), dict) else []
+    for part in parts:
+        if part.get("type") == "text" and part.get("text", "").strip():
+            return part["text"].strip()
+
+    for key in ("text", "input", "query", "question", "content"):
+        val = params.get(key, "")
+        if isinstance(val, str) and val.strip():
+            return val.strip()
+
+    return ""
 
 
 @app.route("/", methods=["GET", "POST"])
 def handle_root():
 
     if request.method == "GET":
-        return jsonify({
-            "status": "healthy",
-            "agent": AGENT_NAME
-        }), 200
+        return jsonify({"status": "healthy", "agent": AGENT_NAME}), 200
 
     body = request.get_json(silent=True) or {}
-    print("DEBUG FULL BODY:", body, flush=True)
+    app.logger.warning("DEBUG BODY: %s", body)
 
     if "method" in body:
-
         method = body.get("method", "")
         params = body.get("params", {})
         task_id = params.get("id") or str(uuid.uuid4())
+        rpc_id = body.get("id")
 
-        if method not in ("tasks/send", "tasks/sendSubscribe", "message/send", "message/sendSubscribe"):
+        if method not in (
+            "tasks/send",
+            "tasks/sendSubscribe",
+            "message/send",
+            "message/sendSubscribe",
+        ):
             return jsonify({
                 "jsonrpc": "2.0",
-                "id": body.get("id"),
-                "error": {
-                    "code": -32601,
-                    "message": f"Method not found: {method}"
-                },
-            }), 404
+                "id": rpc_id,
+                "error": {"code": -32601, "message": f"Method not found: {method}"},
+            }), 200  
+        question = extract_question(params)
 
-        message = params.get("message", {})
-        parts = message.get("parts", [])
-
-        question = ""
-        for part in parts:
-            if part.get("type") == "text":
-                question = part.get("text", "")
-                break
-
-        if not question.strip():
+        if not question:
+            app.logger.warning("Could not extract question from params: %s", params)
             return jsonify({
                 "jsonrpc": "2.0",
-                "id": body.get("id"),
-                "error": {
-                    "code": -32602,
-                    "message": "No question text found in message parts"
-                },
-            }), 400
+                "id": rpc_id,
+                "error": {"code": -32602, "message": "No question text found in message parts"},
+            }), 200  # HTTP 200 per JSON-RPC spec
 
         result = run_task(question)
 
-        task_state = (
-            "completed"
-            if result["status"] == "completed"
-            else "failed"
-        )
-
         artifact_parts = []
-
         if result["status"] == "completed":
             artifact_parts = [
-                {
-                    "type": "text",
-                    "text": result["answer"]
-                },
-                {
-                    "type": "text",
-                    "text": f"SQL: {result['sql']}"
-                }
+                {"type": "text", "text": result["answer"]},
+                {"type": "text", "text": f"SQL: {result['sql']}"},
             ]
 
         return jsonify({
             "jsonrpc": "2.0",
-            "id": body.get("id"),
+            "id": rpc_id,
             "result": {
                 "id": task_id,
-                "status": {
-                    "state": task_state
-                },
-                "artifacts": (
-                    [{"parts": artifact_parts}]
-                    if artifact_parts
-                    else []
-                ),
+                "status": {"state": result["status"]},
+                "artifacts": [{"parts": artifact_parts}] if artifact_parts else [],
             },
         }), 200
 
     question = body.get("question", "")
 
     if not question.strip():
-        return jsonify({
-            "error": "no question provided"
-        }), 400
+        return jsonify({"error": "no question provided"}), 400
 
     result = run_task(question)
 
     if result["status"] == "failed":
-        return jsonify({
-            "error": result["error"]
-        }), 500
+        return jsonify({"error": result["error"]}), 500
 
-    return jsonify({
-        "sql": result["sql"],
-        "answer": result["answer"],
-    }), 200
+    return jsonify({"sql": result["sql"], "answer": result["answer"]}), 200
 
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8080))
-    app.run(
-        host="0.0.0.0",
-        port=port,
-    )
+    app.run(host="0.0.0.0", port=port)
