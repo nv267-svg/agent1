@@ -68,22 +68,23 @@ def run_task(question: str) -> dict:
 
 
 def extract_question(params: dict) -> str:
-    """Try every known Kagenti/A2A payload shape to find the question text."""
-
     parts = params.get("message", {}).get("parts", [])
     for part in parts:
-        if part.get("type") == "text" and part.get("text", "").strip():
-            return part["text"].strip()
+        if part.get("kind") == "text" or part.get("type") == "text":
+            if part.get("text", "").strip():
+                return part["text"].strip()
 
     parts = params.get("parts", [])
     for part in parts:
-        if part.get("type") == "text" and part.get("text", "").strip():
-            return part["text"].strip()
+        if part.get("kind") == "text" or part.get("type") == "text":
+            if part.get("text", "").strip():
+                return part["text"].strip()
 
     parts = params.get("input", {}).get("parts", []) if isinstance(params.get("input"), dict) else []
     for part in parts:
-        if part.get("type") == "text" and part.get("text", "").strip():
-            return part["text"].strip()
+        if part.get("kind") == "text" or part.get("type") == "text":
+            if part.get("text", "").strip():
+                return part["text"].strip()
 
     for key in ("text", "input", "query", "question", "content"):
         val = params.get(key, "")
@@ -100,7 +101,6 @@ def handle_root():
         return jsonify({"status": "healthy", "agent": AGENT_NAME}), 200
 
     body = request.get_json(silent=True) or {}
-    app.logger.warning("DEBUG BODY: %s", body)
 
     if "method" in body:
         method = body.get("method", "")
@@ -118,16 +118,16 @@ def handle_root():
                 "jsonrpc": "2.0",
                 "id": rpc_id,
                 "error": {"code": -32601, "message": f"Method not found: {method}"},
-            }), 200  
+            }), 200
+
         question = extract_question(params)
 
         if not question:
-            app.logger.warning("Could not extract question from params: %s", params)
             return jsonify({
                 "jsonrpc": "2.0",
                 "id": rpc_id,
                 "error": {"code": -32602, "message": "No question text found in message parts"},
-            }), 200  # HTTP 200 per JSON-RPC spec
+            }), 200
 
         result = run_task(question)
 
