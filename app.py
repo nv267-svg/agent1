@@ -80,8 +80,7 @@ def ui():
         except Exception as e:
             error = str(e)
 
-    return render_template_string(
-        HTML,
+    return render_template_string(HTML,
         sql=sql_query,
         result=result_html,
         error=error
@@ -123,7 +122,7 @@ def agent_card():
 
 # This endpoint receives messages from Kagenti, extracts the question, runs it through the agent, and returns the answer in the expected format.
 @app.route("/", methods=["POST"])
-def a2a():
+def a2a(): 
     body = request.get_json(silent=True) or {}
     print(f">>> FULL BODY: {body}", flush=True)
     
@@ -170,11 +169,7 @@ def a2a():
             "result": {
                 "id":     str(uuid.uuid4()),
                 "status": {"state": "completed"},
-                "message": {
-                    "role": "agent",
-                    "parts": [{"kind": "text", "text": answer}],
-                    "messageId": str(uuid.uuid4()),
-                }
+                "parts": [{"kind": "text", "text": answer}],  # ← parts directly in result
             },
         })
 
