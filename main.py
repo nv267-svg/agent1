@@ -29,7 +29,7 @@ AGENT_CARD = {
         {
             "id": "crop-query",
             "name": "Crop Data Query",
-            "description": "Answer questions about crop data by converting text into SQL.",
+            "description": "Answer questions about crop data using natural language.",
             "tags": ["crop", "agriculture", "sql", "data"],
             "examples": [
                 "What is the average yield for wheat?",
@@ -158,10 +158,8 @@ def handle_root():
     if result["status"] == "failed":
         return jsonify({"error": result["error"]}), 500
 
-    return jsonify({"sql": result["sql"], "answer": result["answer"]}), 200
-
+    return jsonify({ "jsonrpc": "2.0", "id": body.get("id"), "result": { "id": str(uuid.uuid4()), "status": {"state": "completed"}, "parts": [{"kind": "text", "text": result["answer"]}] } })
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8080))
     app.run(host="0.0.0.0", port=port)
-
