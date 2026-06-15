@@ -29,7 +29,7 @@ AGENT_CARD = {
         {
             "id": "crop-query",
             "name": "Crop Data Query",
-            "description": "Answer questions about crop data using natural language.",
+            "description": "Answer questions about crop data by converting text into SQL.",
             "tags": ["crop", "agriculture", "sql", "data"],
             "examples": [
                 "What is the average yield for wheat?",
