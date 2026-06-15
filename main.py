@@ -29,7 +29,7 @@ AGENT_CARD = {
         {
             "id": "crop-query",
             "name": "Crop Data Query",
-            "description": "Answer questions about crop data using natural language.",
+            "description": "sql-to-text for the crop info",
             "tags": ["crop", "agriculture", "sql", "data"],
             "examples": [
                 "What is the average yield for wheat?",
@@ -131,20 +131,36 @@ def handle_root():
 
         result = run_task(question)
 
-        artifact_parts = []
-        if result["status"] == "completed":
-            artifact_parts = [
-                {"type": "text", "text": result["answer"]},
-                {"type": "text", "text": f"SQL: {result['sql']}"},
-            ]
+        if result["status"] == "failed":
+            return jsonify({
+                "jsonrpc": "2.0",
+                "id": rpc_id,
+                "result": {
+                    "id": task_id,
+                    "status": {
+                        "state": "failed",
+                        "message": {
+                            "role": "agent",
+                            "parts": [{"kind": "text", "text": f"Error: {result['error']}"}],
+                        },
+                    },
+                },
+            }), 200
 
+        # Return status.message.parts — the format chat.py's send_message already parses
+        answer = f"{result['answer']}\n\nSQL: {result['sql']}"
         return jsonify({
             "jsonrpc": "2.0",
             "id": rpc_id,
             "result": {
                 "id": task_id,
-                "status": {"state": result["status"]},
-                "artifacts": [{"parts": artifact_parts}] if artifact_parts else [],
+                "status": {
+                    "state": "completed",
+                    "message": {
+                        "role": "agent",
+                        "parts": [{"kind": "text", "text": answer}],
+                    },
+                },
             },
         }), 200
 
@@ -158,7 +174,20 @@ def handle_root():
     if result["status"] == "failed":
         return jsonify({"error": result["error"]}), 500
 
-    return jsonify({ "jsonrpc": "2.0", "id": body.get("id"), "result": { "id": str(uuid.uuid4()), "status": {"state": "completed"}, "parts": [{"kind": "text", "text": result["answer"]}] } })
+    return jsonify({
+        "jsonrpc": "2.0",
+        "id": body.get("id"),
+        "result": {
+            "id": str(uuid.uuid4()),
+            "status": {
+                "state": "completed",
+                "message": {
+                    "role": "agent",
+                    "parts": [{"kind": "text", "text": result["answer"]}],
+                },
+            },
+        },
+    })
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8080))
