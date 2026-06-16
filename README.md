@@ -4,7 +4,7 @@ A **LangGraph-based agent** that converts natural language questions into SQL qu
  
 ---
  
-## 📁 Project Structure
+## Project Structure
  
 ```
 agent1/
@@ -24,7 +24,7 @@ agent1/
  
 ---
  
-## 🔍 How It Works
+## How It Works
  
 ### `data.py`
 > Run **once** to generate `crop.db` from `crop_yield.csv`. Do not re-run unless the CSV has been updated.
