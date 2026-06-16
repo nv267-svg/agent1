@@ -53,6 +53,7 @@ def ui():
     sql_query = ""
     result_html = ""
     error = ""
+    data_insights = ""
 
     if request.method == "POST":
 
@@ -64,6 +65,7 @@ def ui():
                 "question": question,
                 "sql_query": None,
                 "rows": None,
+                "data_insights": None,
                 "error": None
             })
 
@@ -72,9 +74,11 @@ def ui():
             else: 
                 sql_query = final_state.get("sql_query", "")
                 rows = final_state.get("rows") or []
+                data_insights = final_state.get("data_insights", "")
                 if rows:
                     df = pd.DataFrame(rows)
                     result_html = df.to_html(index=False)
+                    result_html += f"<h3>Data Insights</h3><p>{data_insights}</p>"
                 else:
                     result_html = "<p>No results found.</p>"
         except Exception as e:
@@ -83,7 +87,8 @@ def ui():
     return render_template_string(HTML,
         sql=sql_query,
         result=result_html,
-        error=error
+        data_insights=data_insights,
+        error=error,
     )
 
 #new stuff for Kagenti A2A 
@@ -149,6 +154,7 @@ def a2a():
             "question": question,
             "sql_query": None,   # was "sql"
             "rows":      None,
+            "data_insights": None,
             "error":     None,
         })
 
@@ -159,7 +165,8 @@ def a2a():
         else:
             sql  = final_state.get("sql_query", "")
             rows = final_state.get("rows") or []
-            answer = f"SQL:\n{sql}\n\nResults ({len(rows)} rows):\n{pd.DataFrame(rows).to_string(index=False)}" if rows else f"SQL:\n{sql}\n\nNo rows returned."
+            data_insights = final_state.get("data_insights", "")
+            answer = f"SQL:\n{sql}\n\nResults ({len(rows)} rows):\n{pd.DataFrame(rows).to_string(index=False)} + Data Insights: {data_insights}" if rows else f"SQL:\n{sql}\n\nNo rows returned."
 
         print(f">>> ANSWER: {answer[:100]}", flush=True)
 
@@ -187,7 +194,7 @@ def a2a():
 # ── GET/ serves the HTML form for local testing and debugging. This is not used by Kagenti, which only interacts with the POST/ endpoint. 
 @app.route("/", methods=["GET"])
 def home_get():
-    return render_template_string(HTML, sql="", result="", error="")
+    return render_template_string(HTML, sql="", result="", data_insights="", error="")
 
 PORT = int(os.getenv("PORT", 8000))
 

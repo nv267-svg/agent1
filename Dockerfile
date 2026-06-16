@@ -8,9 +8,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY data.py .
 COPY graph.py .
 COPY app.py .
+COPY crop.db .
  
 # Build crop.db from generated fake data at image build time
-RUN python data.py
  
 ENV PORT=8000
 ENV DB_PATH=/app/crop.db

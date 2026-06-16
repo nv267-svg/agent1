@@ -31,6 +31,7 @@ class AgentState(TypedDict):
     question: str
     sql_query: Optional[str]
     rows: Optional[list[dict]]
+    data_insights: Optional[str]
     error: Optional[str]
     
 #node1: generate SQL from question
@@ -72,22 +73,51 @@ def execute_sql_node(state: AgentState) -> AgentState:
      except Exception as e:       
             return {**state, "rows": None, "error": f"SQL Error: {str(e)}"}
 
+def analyze_data(state: AgentState) -> AgentState:
+    llm = ChatOllama(model=OLLAMA_MODEL, base_url=OLLAMA_BASE_URL, temperature=0)
+    prompt = f"""
+    You are a agent that takes SQL results and translates them into natural language.
+
+    Return ONLY the translation of the SQL results.
+    Return ONLY natural language.
+    Return ONLY the insights that can be drawn from the data.
+    Do NOT return the raw data, just the insights.
+
+    Schema:
+    {SCHEMA}
+
+    Question:
+    {state['question']} 
+
+    SQL Results:
+    {state['rows']}
+    """
+
+    try: 
+        response = llm.invoke(([HumanMessage(content=prompt)]))
+        response_clean = response.content.strip()
+        return {**state, "data_insights": response_clean, "error": None} #copies the dictionary and edits the data_insights and error keys
+    except Exception as e:
+        return {**state, "data_insights": None, "error": f"Error generating insights: {str(e)}"}
+
 
 def build_graph():
      graph = StateGraph(AgentState)
      graph.add_node("generate_sql", generate_sql_node)
      graph.add_node("execute_sql", execute_sql_node)
+     graph.add_node("analyze_data", analyze_data)
+
 
      graph.add_edge(START, "generate_sql")
      graph.add_edge("generate_sql", "execute_sql")
-     graph.add_edge("execute_sql", END)
+     graph.add_edge("execute_sql", "analyze_data")
+     graph.add_edge("analyze_data", END)
 
      return graph.compile()
 
 
 #compiles the graph and returns an agent that can be invoked with an initial state
 crop_agent = build_graph() 
-
 
 
 
