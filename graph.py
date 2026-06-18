@@ -2,29 +2,28 @@ from typing import TypedDict, Optional
 from langgraph.graph import StateGraph, START, END
 from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
+from sqlalchemy import create_engine
 import os
 import sqlite3
 import pandas as pd
 import requests
+import psycopg
 
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 OLLAMA_MODEL    = os.getenv("OLLAMA_MODEL",    "llama3.2:3b-instruct-fp16")
 DB_PATH         = os.getenv("DB_PATH",         "crop.db")
 
 SCHEMA = """
-Table: crop
+Table: aggregated_data.daily_cow
 
-Columns:
-Region
-Soil_Type
-Crop
-Rainfall_mm
-Temperature_Celsius
-Fertilizer_Used
-Irrigation_Used
-Weather_Condition
-Days_to_Harvest
-Yield_tons_per_hectare
+Column names: 
+ daily_cow.farm           
+ daily_cow.cow_id         
+ daily_cow.usda_id         
+ daily_cow.bodytemp_1     
+ daily_cow.activity_2      
+ daily_cow.water_intake_1 
+ daily_cow.cow_breed    
 """
 
 class AgentState(TypedDict):
@@ -41,7 +40,7 @@ def generate_sql_node(state: AgentState) -> AgentState:
     You are a SQLite SQL generator.
 
     Return ONLY SQL.
-    Return ONLY the columns asked for.
+    Return ONLY the columns asked for USING THE COLUMN NAMES I GAVE U IN THE SCHEMA.
 
     Schema:
     {SCHEMA}
@@ -64,14 +63,19 @@ def execute_sql_node(state: AgentState) -> AgentState:
      if state.get("error") or not state.get("sql_query"):
         return state
      try:
-         conn = sqlite3.connect(DB_PATH)
-         conn.row_factory = sqlite3.Row #returns rows as dictionaries
-         df = pd.read_sql_query(state["sql_query"], conn)         
-         conn.close()
-         rows = df.head(100).to_dict(orient="records") #converts dataframe to list of dictionaries
-         return {**state, "rows": rows, "error": None} #copies the dictionary and edits the rows and error keys, and RETURNS
+        db_url = "postgresql+psycopg://postgres:farmdata2024@localhost:5433/FotF"
+        engine = create_engine(db_url)
+        
+        # pandas read_sql_query handles the execution and fetching
+        df = pd.read_sql_query(state["sql_query"], engine)         
+        
+        # Convert to list of dicts for your next node
+        rows = df.head(100).to_dict(orient="records") 
+        return {**state, "rows": rows, "error": None}
+        
      except Exception as e:       
-            return {**state, "rows": None, "error": f"SQL Error: {str(e)}"}
+        return {**state, "rows": None, "error": f"SQL Error: {str(e)}"}
+        
 
 def analyze_data(state: AgentState) -> AgentState:
     llm = ChatOllama(model=OLLAMA_MODEL, base_url=OLLAMA_BASE_URL, temperature=0)

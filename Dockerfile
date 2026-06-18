@@ -19,4 +19,5 @@ ENV OLLAMA_MODEL=llama3.2:3b-instruct-fp16
  
 EXPOSE 8000
  
-CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:8000", "--workers", "1", "--timeout", "300", "--capture-output", "--log-level", "debug"]
+CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:8001", "--workers", "1", "--timeout", "300", "--capture-output", "--log-level", "debug"]
+
