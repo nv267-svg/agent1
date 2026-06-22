@@ -12,7 +12,7 @@ HTML = """
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Crop Yield Agent</title>
+    <title>Crop Yield Agent</title>.;
 </head>
 <body>
 
