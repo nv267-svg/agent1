@@ -11,7 +11,7 @@ conn = psycopg.connect(
 
 cur = conn.cursor()
 
-cur.execute("SELECT * FROM aggregated_data.daily_cow")
+cur.execute("SELECT * FROM aggregated_data.one_row_per_cow_per_day")
 
 rows = cur.fetchall()
 
