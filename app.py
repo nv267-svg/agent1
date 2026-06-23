@@ -12,11 +12,11 @@ HTML = """
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Crop Yield Agent</title>.;
+    <title>FotF Cow Data Agent</title>
 </head>
 <body>
 
-    <h1>Text-to-SQL for Crop Yield</h1>
+    <h1>Text-to-SQL for FotF Cow Data </h1>
 
     <form method="POST" action="/ui">
         <input
@@ -29,6 +29,11 @@ HTML = """
         <button type="submit">Submit</button>
     </form>
 
+    {% if question %}
+        <h2>Question</h2>
+        <pre>{{ question }}</pre>
+    {% endif %}
+
     {% if sql %}
         <h2>Generated SQL</h2>
         <pre>{{ sql }}</pre>
@@ -38,6 +43,7 @@ HTML = """
         <h2>Results</h2>
         {{ result|safe }}
     {% endif %}
+
 
 </body>
 </html>
@@ -50,6 +56,7 @@ def ping():
 @app.route("/ui", methods=["GET", "POST"])
 def ui():
 
+    question = ""
     sql_query = ""
     result_html = ""
     error = ""
@@ -85,6 +92,7 @@ def ui():
             error = str(e)
 
     return render_template_string(HTML,
+        question=question,
         sql=sql_query,
         result=result_html,
         data_insights=data_insights,
