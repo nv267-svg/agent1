@@ -17,28 +17,25 @@ SCHEMA = """
 Table: aggregated_data.one_row_per_cow_per_day
 
 Column names: 
-one_row_per_cow_per_day.date
-one_row_per_cow_per_day.animal_id
-one_row_per_cow_per_day.lact
-one_row_per_cow_per_day.dim
-one_row_per_cow_per_day.pen
-one_row_per_cow_per_day.cbrd
-one_row_per_cow_per_day.pta
-one_row_per_cow_per_day.gdpr
-one_row_per_cow_per_day.fdat
-one_row_per_cow_per_day.cdat
-one_row_per_cow_per_day.ddat
-one_row_per_cow_per_day.rc
-one_row_per_cow_per_day.rpro
-one_row_per_cow_per_day.dcc
-one_row_per_cow_per_day.scc
-one_row_per_cow_per_day.ls
-one_row_per_cow_per_day.ddry
-one_row_per_cow_per_day.t2000
-one_row_per_cow_per_day.psirc
-one_row_per_cow_per_day.tbrd
-one_row_per_cow_per_day.dc_events
-one_row_per_cow_per_day.milkings_yesterday
+ne_row_per_cow_per_day.date = the date the data was collected
+One_row_per_cow_per_day.animal_id = the identification number of the cow
+One_row_per_cow_per_day.lact =  the lactation number of the cow. 
+One_row_per_cow_per_day.dim = days in milk. 
+One_row_per_cow_per_day.pen = what PEN number the cow is in
+One_row_per_cow_per_day.cbrd = stands for cattle breed 
+One_row_per_cow_per_day.pta =  Predicted Transmitting Ability (need more info)
+One_row_per_cow_per_day.gdpr =  genomic prediction of daughter pregnancy rate. 
+One_row_per_cow_per_day.fdat =  fresh date, means the date the cow began her current lactation. 
+One_row_per_cow_per_day.cdat = conception date
+One_row_per_cow_per_day.ddat =  dry date
+One_row_per_cow_per_day.rc  =   reproductive code numbered(0-7)RC=3 OK/OPEN Animals that are eligible to breed. These could be fresh animals that were checked and declared ready to breed or a bred animal that was declared open. RC=4 BRED Inseminated animals that have not been diagnosed as PREG or OPEN. RC=5 PREG Animals that have been declared pregnant. RC=6 DRY Animals in their Dry period (not milking). RC=7 SLD/DIE Any animal that was sold or has died. 
+One_row_per_cow_per_day.rpro  = reproductive code in written language 
+One_row_per_cow_per_day.dcc  = days_carried_calf if calf pregnant
+One_row_per_cow_per_day.scc somatic_cell_count. Raw somatic cell counts in exact value where 0-3 
+One_row_per_cow_per_day.ddry = days dry which is the number of days that a cow is not being milked 
+One_row_per_cow_per_day.psirc previous lactation sire of conception which tracks the sire 
+One_row_per_cow_per_day.tbrd = the number of times the cow has been inseminated during the CURRENT REPRODUCTIVE CYCLE. 
+One_row_per_cow_per_day.milkings_yesterday = how many times the cow was milked yesterday
 one_row_per_cow_per_day.milk_yield_yesterday
 one_row_per_cow_per_day.yield_yesterday_session_1
 one_row_per_cow_per_day.yield_yesterday_session_2
@@ -48,13 +45,13 @@ one_row_per_cow_per_day.yesterday_deviation_pct_from_avg_last_7d
 one_row_per_cow_per_day.total_yield_in_lactation
 one_row_per_cow_per_day.milk_yield_last_24hrs
 one_row_per_cow_per_day.total_lifetime_yield
-one_row_per_cow_per_day.lmsfd
-one_row_per_cow_per_day.lmsft
-one_row_per_cow_per_day.lmsv
-one_row_per_cow_per_day.bcsfd
-one_row_per_cow_per_day.bcsft
-one_row_per_cow_per_day.bcsv
-one_row_per_cow_per_day.allflex_tag_number
+One_row_per_cow_per_day.lmsfd = Date the last locomotion score was added
+One_row_per_cow_per_day.lmsft = Time of day the last locomotion score was added 
+One_row_per_cow_per_day.lmsv = Last locomotion score value to indicate mobility. Range is 0 to 100
+One_row_per_cow_per_day.bcsfd = Date the last BCS was added
+One_row_per_cow_per_day.bcsft = Time of day the last BCS was added
+One_row_per_cow_per_day.bcsv = The last BCS Value. BCS = “Body Condition Score” The value indicates an animal’s energy balance based on being extremely thin or having excessive fat deposits. Range is 0 to 5
+One_row_per_cow_per_day.allflex_tag_number = the visual identification number printed on an Allflex tag attached to the cow.
 one_row_per_cow_per_day.avg_health_index_for_non_milked_cows
 one_row_per_cow_per_day.min_health_index_for_non_milked_cows
 one_row_per_cow_per_day.max_health_index_for_non_milked_cows
@@ -62,8 +59,8 @@ one_row_per_cow_per_day.sum_health_index_without_milk_for_test
 one_row_per_cow_per_day.avg_health_index_without_milk_for_test
 one_row_per_cow_per_day.min_health_index_without_milk_for_test
 one_row_per_cow_per_day.max_health_index_without_milk_for_test
-one_row_per_cow_per_day.sum_scr_heat_index
-one_row_per_cow_per_day.avg_scr_heat_index
+One_row_per_cow_per_day.sum_scr_heat_index 
+One_row_per_cow_per_day.avg_scr_heat_index		
 one_row_per_cow_per_day.min_scr_heat_index
 one_row_per_cow_per_day.max_scr_heat_index
 one_row_per_cow_per_day.avg_activity_change
@@ -76,8 +73,7 @@ one_row_per_cow_per_day.daily_activity
 one_row_per_cow_per_day.avg_raw_activity_data
 one_row_per_cow_per_day.min_raw_activity_data
 one_row_per_cow_per_day.max_raw_activity_data
-one_row_per_cow_per_day.daily_rumination
-one_row_per_cow_per_day.avg_raw_rumination
+One_row_per_cow_per_day.daily_rumination = time spent per day chewing cud, or ruminating. 
 one_row_per_cow_per_day.min_raw_rumination
 one_row_per_cow_per_day.max_raw_rumination
 one_row_per_cow_per_day.weekly_rumination_average
@@ -103,7 +99,7 @@ one_row_per_cow_per_day.min_temp_normal_index
 one_row_per_cow_per_day.max_temp_normal_index
 one_row_per_cow_perDay.sum_smx_heat_index
 one_row_per_cow_perDay.avg_smx_heat_index
-one_row_per_cow_perDay.min_smx_heat_index
+one_row_per_cow_perDay.min_smx_heat_index  
 one_row_per_cow_perDay.max_smx_heat_index
 one_row_per_cow_perDay.sum_calving_index
 one_row_per_cow_perDay.avg_calving_index
@@ -144,6 +140,8 @@ def generate_sql_node(state: AgentState) -> AgentState:
     Return ONLY SQL and USE THE TABLE NAME AND SCHEMA I GAVE YOU. 
     THIS IS THE TABLE NAME aggregated_data.one_row_per_cow_per_day USE THIS
     Return ONLY the columns asked for USING THE COLUMN NAMES I GAVE U IN THE SCHEMA.
+    If I say for the first 5 cows for example, that just means the first 5 listed you do not need to concern yourself
+    with the animal_id field. The actual column label is the part BEFORE the equal sign the part AFTER is a description to help you understand what the label means. DO NOT assume what the labels mean read the part in the schema
 
     Schema:
     {SCHEMA}
@@ -166,7 +164,7 @@ def execute_sql_node(state: AgentState) -> AgentState:
      if state.get("error") or not state.get("sql_query"):
         return state
      try:
-        db_url = "postgresql+psycopg://postgres:farmdata2024@localhost:5433/FotF"
+        db_url = "postgresql+psycopg://postgres:farmdata2024@128.84.40.194:5432/FotF"
         engine = create_engine(db_url)
         
         # pandas read_sql_query handles the execution and fetching
