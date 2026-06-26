@@ -68,6 +68,43 @@ def predict(features: pd.DataFrame, threshold: float | None = None) -> pd.DataFr
         index=features.index,
     )
 
+def predict_one_cow(df_raw: pd.DataFrame, animal_id, lact: int, threshold: float | None = None) -> pd.DataFrame:
+    """Predict 120-day exit probability for ONE cow-lactation."""
+    cow_raw = df_raw[(df_raw['animal_id'] == animal_id) & (df_raw['lact'] == lact)]
+    if cow_raw.empty:
+        raise ValueError(f"No rows found for animal_id={animal_id!r}, lact={lact!r}")
+
+    dim_min = META['feature_window']['dim_min']
+    dim_max = META['feature_window']['dim_max']
+    cow_early = cow_raw[(cow_raw['dim'] >= dim_min) & (cow_raw['dim'] <= dim_max)]
+    if cow_early.empty:
+        raise ValueError(f"No DIM {dim_min}-{dim_max} records for this cow-lactation.")
+
+    mean_suffix = f"_mean_DIM{dim_min}_{dim_max}"
+    std_suffix = f"_std_DIM{dim_min}_{dim_max}"
+
+    row = {}
+    for col in FEATURE_COLUMNS:
+        if col.endswith(mean_suffix):
+            raw_col = col[: -len(mean_suffix)]
+            row[col] = cow_early[raw_col].mean() if raw_col in cow_early.columns else np.nan
+        elif col.endswith(std_suffix):
+            raw_col = col[: -len(std_suffix)]
+            row[col] = cow_early[raw_col].std() if raw_col in cow_early.columns else np.nan
+        elif col == 'parity':
+            row[col] = cow_raw['lact'].iloc[0]
+        elif col == 'pen_first':
+            row[col] = cow_raw['pen'].iloc[0] if 'pen' in cow_raw.columns else np.nan
+        elif col == 'scc_first':
+            row[col] = cow_raw['scc'].iloc[0] if 'scc' in cow_raw.columns else np.nan
+        elif col == 'n_early_records':
+            row[col] = len(cow_early)
+        else:
+            row[col] = np.nan  
+
+    cow_x = pd.DataFrame([row])
+    cow_x.index = [f"{animal_id}_{lact}"]
+    return predict(cow_x, threshold=threshold)
 
 if __name__ == '__main__':
     print(f"Model:      {META['model_name']}")
@@ -81,3 +118,6 @@ if __name__ == '__main__':
     out = predict(sample)
     print("\nSample inference (all-NaN input):")
     print(out)
+    df_raw = pd.read_csv('/Users/nandinivenkatesh/agent1/automl-export/query_results_20260430_200359.csv', low_memory=False)
+    result = predict_one_cow(df_raw, animal_id=2708, lact=3)
+    print(result)
