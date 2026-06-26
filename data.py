@@ -9,4 +9,3 @@ dat=sqlite3.connect("crop.db")
 df.to_sql(
     "crop",dat,if_exists="replace",index=False
 )
-
