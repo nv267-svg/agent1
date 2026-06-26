@@ -5,6 +5,7 @@ import os
 import uuid
 
 from graph import crop_agent
+from agent2.agent2graph import cow_prediction_agent
 
 app = Flask(__name__)
 
@@ -29,6 +30,19 @@ HTML = """
         <button type="submit">Submit</button>
     </form>
 
+    <h3>Cow Exit Predictor </h3>
+
+    <form method="POST" action="/ui">
+        <input
+            type="text"
+            name="prediction"
+            placeholder="Make a prediction on cow exit..."
+            style="width:500px;"
+            required
+        >
+        <button type="submit">Submit</button>
+    </form>
+
     {% if question %}
         <h2>Question</h2>
         <pre>{{ question }}</pre>
@@ -42,6 +56,11 @@ HTML = """
     {% if result %}
         <h2>Results</h2>
         {{ result|safe }}
+    {% endif %}
+
+    {% if prediction %}
+        <h2>Prediction</h2>
+        <pre>{{ prediction }}</pre>
     {% endif %}
 
 
@@ -61,13 +80,18 @@ def ui():
     result_html = ""
     error = ""
     data_insights = ""
+    prediction = ""
 
     if request.method == "POST":
 
         question = request.form["question"]
+        print(f">>> Got question: {question}", flush=True)
+        prediction = request.form["prediction"]
+
 
         try:
             #the initial state of the agent is a dictionary with only the question so far
+            print(">>> Invoking agent...", flush=True)
             final_state = crop_agent.invoke({ 
                 "question": question,
                 "sql_query": None,
@@ -75,6 +99,7 @@ def ui():
                 "data_insights": None,
                 "error": None
             })
+            print(f">>> Agent finished: {final_state}", flush=True)
 
             if final_state.get("error"):
                 error = final_state["error"]
@@ -97,6 +122,7 @@ def ui():
         result=result_html,
         data_insights=data_insights,
         error=error,
+        prediction=prediction,
     )
 
 #new stuff for Kagenti A2A 

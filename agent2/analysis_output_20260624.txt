@@ -1,0 +1,291 @@
+[Output also being written to: /mnt/c/Users/gabye/k3s/agent1/automl-export/analysis_output_20260624.txt]
+[Using CSV: query_results_20260430_200359.csv]
+================================================================================
+CAST DAIRY HERD — LACTATION EXIT PREDICTION
+================================================================================
+
+Workspace: /mnt/c/Users/gabye/k3s/agent1/automl-export
+Analysis Start: 2026-06-24T15:08:43.985388
+Feature window: DIM 1-21
+Exit windows: [60, 90, 120] days post-calving
+
+[STEP 1] Loading CSV data...
+  Loaded 359,705 rows x 101 columns
+  Date range: 2024-10-30 to 2026-04-29
+  Unique cows: 1,706
+
+[STEP 2] Building cow-lactation table...
+  Rows with valid lact + dim: 229,415
+  Unique cow-lactations: 1,418
+  Parity distribution:
+    Parity 1: 342 (24.1%)
+    Parity 2: 322 (22.7%)
+    Parity 3: 288 (20.3%)
+    Parity 4: 214 (15.1%)
+    Parity 5: 142 (10.0%)
+    Parity 6: 68 (4.8%)
+    Parity 7: 26 (1.8%)
+    Parity 8: 13 (0.9%)
+    Parity 9: 3 (0.2%)
+
+[STEP 3] Aggregating sensor features from DIM 1-21...
+  Records in DIM 1-21: 13,920
+  Sensor/numeric columns for aggregation: 80
+  Cow-lactations with early features: 779
+  Total features: 130
+  After requiring >= 7 early records: 750
+
+[STEP 4] Defining exit targets for each window...
+
+  60-day window:
+    Survived (stay >= 60d): 620
+    Exited (left < 60d):    27
+    Right-censored (excluded):   103
+    Exit rate: 4.2% (27/647)
+
+  90-day window:
+    Survived (stay >= 90d): 553
+    Exited (left < 90d):    36
+    Right-censored (excluded):   161
+    Exit rate: 6.1% (36/589)
+
+  120-day window:
+    Survived (stay >= 120d): 495
+    Exited (left < 120d):    42
+    Right-censored (excluded):   213
+    Exit rate: 7.8% (42/537)
+
+[STEP 5] Data quality summary...
+  Feature coverage (% non-null across cow-lactations):
+    >= 80%: 66 features
+    50-80%: 59 features
+    < 50%:  5 features (will be dropped)
+  Features retained: 125
+
+[STEP 6] Running AutoGluon for each exit window...
+
+======================================================================
+  MODELING: 60-DAY EXIT PREDICTION
+======================================================================
+  Train: 485 rows, 18 exits (3.7%)
+  Test:  162 rows, 9 exits (5.6%)
+  Training AutoGluon (180s time limit, eval=PR AUC)...
+
+  Tuned thresholds (from PR curve on OOF train predictions):
+    F1-optimal:     thr=0.1595  F1=0.4865
+    F2-optimal:     thr=0.1013  F2=0.5660  (favors recall)
+    Youden-optimal: thr=0.0837  J=0.6580
+
+  Results (60-day exit):
+    Accuracy:   0.9506  (naive baseline: 0.9444)
+    Precision:  1.0000
+    Recall:     0.1111
+    F1-Score:   0.2000
+    ROC-AUC:    0.7930
+    PR AUC:     0.3574
+
+  Confusion Matrix:
+    True Negatives:  153
+    False Positives: 0
+    False Negatives: 8
+    True Positives:  1
+
+  Test-set metrics at tuned thresholds:
+    [default | thr=0.5000]
+      Precision: 1.0000  Recall: 0.1111  F1: 0.2000  Acc: 0.9506
+      Confusion (TN/FP/FN/TP): 153 / 0 / 8 / 1
+    [F1-tuned | thr=0.1595]
+      Precision: 0.3636  Recall: 0.4444  F1: 0.4000  Acc: 0.9259
+      Confusion (TN/FP/FN/TP): 146 / 7 / 5 / 4
+    [F2-tuned | thr=0.1013]
+      Precision: 0.3000  Recall: 0.6667  F1: 0.4138  Acc: 0.8951
+      Confusion (TN/FP/FN/TP): 139 / 14 / 3 / 6
+    [Youden-tuned | thr=0.0837]
+      Precision: 0.2692  Recall: 0.7778  F1: 0.4000  Acc: 0.8704
+      Confusion (TN/FP/FN/TP): 134 / 19 / 2 / 7
+
+  Model Leaderboard (top 5):
+    1. RandomForestGini_BAG_L1_FULL       : 0.5766
+    2. RandomForestGini_BAG_L1            : 0.5766
+    3. RandomForestEntr_BAG_L1            : 0.5369
+    4. RandomForestEntr_BAG_L1_FULL       : 0.5369
+    5. ExtraTreesEntr_BAG_L1_FULL         : 0.4860
+
+  Feature Importance (top 15):
+     1. yield_yesterday_session_2_mean_DIM1_21            :   0.0096
+     2. milk_yield_last_24hrs_mean_DIM1_21                :   0.0051
+     3. yield_yesterday_session_3_mean_DIM1_21            :   0.0048
+     4. milkings_yesterday_mean_DIM1_21                   :   0.0031
+     5. yesterday_deviation_pct_from_avg_last_7d_mean_DIM1_21:   0.0026
+     6. sum_smx_heat_index_mean_DIM1_21                   :   0.0022
+     7. min_smx_heat_index_mean_DIM1_21                   :   0.0016
+     8. avg_smx_heat_index_mean_DIM1_21                   :   0.0015
+     9. max_activity_change_std_DIM1_21                   :   0.0010
+    10. min_temp_without_drink_cycles_std_DIM1_21         :   0.0009
+    11. max_activity_change_mean_DIM1_21                  :   0.0007
+    12. max_rum_index_mean_DIM1_21                        :   0.0003
+    13. total_yield_in_lactation_std_DIM1_21              :   0.0001
+    14. pen_first                                         :   0.0001
+    15. scc_first                                         :   0.0000
+
+======================================================================
+  MODELING: 90-DAY EXIT PREDICTION
+======================================================================
+  Train: 445 rows, 25 exits (5.6%)
+  Test:  144 rows, 11 exits (7.6%)
+  Training AutoGluon (180s time limit, eval=PR AUC)...
+
+  Tuned thresholds (from PR curve on OOF train predictions):
+    F1-optimal:     thr=0.1219  F1=0.5333
+    F2-optimal:     thr=0.0718  F2=0.6024  (favors recall)
+    Youden-optimal: thr=0.0609  J=0.7300
+
+  Results (90-day exit):
+    Accuracy:   0.9236  (naive baseline: 0.9236)
+    Precision:  0.5000
+    Recall:     0.0909
+    F1-Score:   0.1538
+    ROC-AUC:    0.8920
+    PR AUC:     0.4818
+
+  Confusion Matrix:
+    True Negatives:  132
+    False Positives: 1
+    False Negatives: 10
+    True Positives:  1
+
+  Test-set metrics at tuned thresholds:
+    [default | thr=0.5000]
+      Precision: 0.5000  Recall: 0.0909  F1: 0.1538  Acc: 0.9236
+      Confusion (TN/FP/FN/TP): 132 / 1 / 10 / 1
+    [F1-tuned | thr=0.1219]
+      Precision: 0.3889  Recall: 0.6364  F1: 0.4828  Acc: 0.8958
+      Confusion (TN/FP/FN/TP): 122 / 11 / 4 / 7
+    [F2-tuned | thr=0.0718]
+      Precision: 0.4167  Recall: 0.9091  F1: 0.5714  Acc: 0.8958
+      Confusion (TN/FP/FN/TP): 119 / 14 / 1 / 10
+    [Youden-tuned | thr=0.0609]
+      Precision: 0.3333  Recall: 0.9091  F1: 0.4878  Acc: 0.8542
+      Confusion (TN/FP/FN/TP): 113 / 20 / 1 / 10
+
+  Model Leaderboard (top 5):
+    1. LightGBM_BAG_L2_FULL               : 0.5843
+    2. RandomForestEntr_BAG_L2_FULL       : 0.5306
+    3. WeightedEnsemble_L2_FULL           : 0.4818
+    4. LightGBMXT_BAG_L2_FULL             : 0.4708
+    5. LightGBMLarge_BAG_L1_FULL          : 0.4498
+
+  Feature Importance (top 15):
+     1. yield_yesterday_session_1_mean_DIM1_21            :   0.0849
+     2. total_yield_in_lactation_mean_DIM1_21             :   0.0612
+     3. max_health_index_for_non_milked_cows_mean_DIM1_21 :   0.0463
+     4. min_activity_change_by_2_hours_mean_DIM1_21       :   0.0430
+     5. milk_yield_last_24hrs_mean_DIM1_21                :   0.0299
+     6. min_activity_change_mean_DIM1_21                  :   0.0241
+     7. sum_health_index_without_milk_for_test_std_DIM1_21:   0.0208
+     8. max_act_index_mean_DIM1_21                        :   0.0199
+     9. avg_health_index_without_milk_for_test_std_DIM1_21:   0.0196
+    10. avg_activity_change_std_DIM1_21                   :   0.0188
+    11. avg_act_mean_DIM1_21                              :   0.0187
+    12. sum_drink_cycles_v2_mean_DIM1_21                  :   0.0149
+    13. yesterday_deviation_pct_from_avg_last_7d_mean_DIM1_21:   0.0148
+    14. parity                                            :   0.0147
+    15. min_activity_change_std_DIM1_21                   :   0.0137
+
+======================================================================
+  MODELING: 120-DAY EXIT PREDICTION
+======================================================================
+  Train: 405 rows, 30 exits (7.4%)
+  Test:  132 rows, 12 exits (9.1%)
+  Training AutoGluon (180s time limit, eval=PR AUC)...
+
+  Tuned thresholds (from PR curve on OOF train predictions):
+    F1-optimal:     thr=0.1365  F1=0.4375
+    F2-optimal:     thr=0.0982  F2=0.5220  (favors recall)
+    Youden-optimal: thr=0.0982  J=0.5187
+
+  Results (120-day exit):
+    Accuracy:   0.9167  (naive baseline: 0.9091)
+    Precision:  1.0000
+    Recall:     0.0833
+    F1-Score:   0.1538
+    ROC-AUC:    0.8639
+    PR AUC:     0.4944
+
+  Confusion Matrix:
+    True Negatives:  120
+    False Positives: 0
+    False Negatives: 11
+    True Positives:  1
+
+  Test-set metrics at tuned thresholds:
+    [default | thr=0.5000]
+      Precision: 1.0000  Recall: 0.0833  F1: 0.1538  Acc: 0.9167
+      Confusion (TN/FP/FN/TP): 120 / 0 / 11 / 1
+    [F1-tuned | thr=0.1365]
+      Precision: 0.4444  Recall: 0.6667  F1: 0.5333  Acc: 0.8939
+      Confusion (TN/FP/FN/TP): 110 / 10 / 4 / 8
+    [F2-tuned | thr=0.0982]
+      Precision: 0.4737  Recall: 0.7500  F1: 0.5806  Acc: 0.9015
+      Confusion (TN/FP/FN/TP): 110 / 10 / 3 / 9
+    [Youden-tuned | thr=0.0982]
+      Precision: 0.4737  Recall: 0.7500  F1: 0.5806  Acc: 0.9015
+      Confusion (TN/FP/FN/TP): 110 / 10 / 3 / 9
+
+  Model Leaderboard (top 5):
+    1. NeuralNetTorch_BAG_L2_FULL         : 0.5916
+    2. WeightedEnsemble_L3_FULL           : 0.5755
+    3. WeightedEnsemble_L2_FULL           : 0.4944
+    4. RandomForestEntr_BAG_L2_FULL       : 0.4764
+    5. LightGBMXT_BAG_L1_FULL             : 0.4762
+
+  Feature Importance (top 15):
+     1. avg_raw_activity_data_mean_DIM1_21                :   0.0419
+     2. total_lifetime_yield_mean_DIM1_21                 :   0.0417
+     3. max_temp_without_drink_cycles_mean_DIM1_21        :   0.0327
+     4. min_rum_index_mean_DIM1_21                        :   0.0309
+     5. avg_activity_change_mean_DIM1_21                  :   0.0296
+     6. avg_temp_mean_DIM1_21                             :   0.0291
+     7. weekly_rumination_average_std_DIM1_21             :   0.0286
+     8. max_raw_activity_data_mean_DIM1_21                :   0.0284
+     9. max_rum_index_mean_DIM1_21                        :   0.0283
+    10. yesterday_deviation_pct_from_avg_last_7d_mean_DIM1_21:   0.0274
+    11. daily_activity_mean_DIM1_21                       :   0.0274
+    12. avg_smx_heat_index_mean_DIM1_21                   :   0.0266
+    13. n_early_records                                   :   0.0260
+    14. avg_temp_without_drink_cycles_mean_DIM1_21        :   0.0258
+    15. parity                                            :   0.0249
+
+[STEP 6b] Exporting LightGBM_BAG_L1_FULL (120-day window) for inference...
+  [Warning] delete_models failed (bad operand type for unary -: 'NoneType'); export will include all models.
+  Predictor exported to: /mnt/c/Users/gabye/k3s/agent1/automl-export/model_export/autogluon_predictor_120d
+  Metadata: /mnt/c/Users/gabye/k3s/agent1/automl-export/model_export/metadata.json
+  Recommended threshold: 0.1365
+  See inference_example.py for how to load and predict.
+
+================================================================================
+ANALYSIS COMPLETE
+================================================================================
+
+APPROACH (informed by Shiang-Perez et al.):
+  - Reframed from daily-grain to cow-lactation level
+  - Aggregated early post-calving sensor data (DIM 1-21)
+  - 125 features retained (>= 50% non-null)
+  - Targets: herd exit within [60, 90, 120] days of calving
+  - Evaluation: PR AUC prioritized (class-imbalance aware)
+  - Right-censored cow-lactations excluded from each window
+
+DATA SUMMARY:
+  - 359,705 daily records from 1,706 cows
+  - 750 cow-lactations with early-DIM features
+  - Date range: 2024-10-30 to 2026-04-29
+
+NEXT STEPS:
+  a) Threshold tuning: optimize decision threshold per window using PR curve
+  b) Feature engineering: add DIM 1-7 and DIM 8-14 sub-windows (per paper)
+  c) Add health event counts if available (mastitis, metritis, etc.)
+  d) Stratify by parity group (1, 2, 3+) for parity-specific models
+  e) External validation with additional herd data
+
+Analysis End: 2026-06-24T15:19:37.101570
+================================================================================

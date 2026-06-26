@@ -4,20 +4,20 @@ from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
 from sqlalchemy import create_engine
 import os
-import sqlite3
 import pandas as pd
+import sqlite3
 import requests
 import psycopg
 
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 OLLAMA_MODEL    = os.getenv("OLLAMA_MODEL",    "llama3.2:3b-instruct-fp16")
-DB_PATH         = os.getenv("DB_PATH",         "crop.db")
+#DB_PATH         = os.getenv("DB_PATH",         "crop.db")
 
 SCHEMA = """
 Table: aggregated_data.one_row_per_cow_per_day
 
 Column names: 
-ne_row_per_cow_per_day.date = the date the data was collected
+One_row_per_cow_per_day.date = the date the data was collected
 One_row_per_cow_per_day.animal_id = the identification number of the cow
 One_row_per_cow_per_day.lact =  the lactation number of the cow. 
 One_row_per_cow_per_day.dim = days in milk. 
