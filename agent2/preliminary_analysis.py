@@ -114,7 +114,7 @@ print(f"  Unique cow-lactations: {len(cow_lact):,}")
 print(f"  Parity distribution:")
 for p in sorted(cow_lact['lact'].unique()):
     n = (cow_lact['lact'] == p).sum()
-    print(f"    Parity {p}: {n} ({n/len(cow_lact)*100:.1f}%)")
+    print(f"    Parity {p}: {n} ({n/len(cow_lact)*100:.1f}%)") #prints how many of each parity (number of lactations) exists
 
 # ============================================================================
 # 3. AGGREGATE EARLY-LACTATION FEATURES (DIM 1-21)

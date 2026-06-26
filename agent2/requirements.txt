@@ -6,3 +6,7 @@
 # Developed/trained against autogluon 1.5.0 — pin if you hit compatibility issues.
 autogluon.tabular[lightgbm]
 scikit-learn
+langgraph>=1.2
+langchain>=1.3
+langchain-ollama>=0.1
+langchain-community>=0.3

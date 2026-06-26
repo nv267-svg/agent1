@@ -1,9 +1,9 @@
 {
-  "exported_at": "2026-04-30T20:15:21.166898",
+  "exported_at": "2026-06-24T15:19:37.067392",
   "window_days": 120,
   "target_col": "exit_120d",
-  "model_name": "WeightedEnsemble_L3_FULL",
-  "predictor_path": "autogluon_predictor_120d",
+  "model_name": "WeightedEnsemble_L2_FULL",
+  "predictor_path": "../autogluon_models/autogluon_cast_120d",
   "feature_columns": [
     "scc_mean_DIM1_21",
     "ls_mean_DIM1_21",
@@ -137,32 +137,31 @@
   },
   "tuned_thresholds": {
     "f1_opt": {
-      "threshold": 0.17258387804031372,
-      "f1": 0.4313725490196078
+      "threshold": 0.13654935359954834,
+      "f1": 0.43749999999999994
     },
     "f2_opt": {
-      "threshold": 0.1033792793750763,
-      "f2": 0.5056179775280899
+      "threshold": 0.09818242490291595,
+      "f2": 0.5219780219780219
     },
     "youden_opt": {
-      "threshold": 0.07312925904989243,
-      "j": 0.5279999999999999
+      "threshold": 0.09818242490291595,
+      "j": 0.5186666666666666
     }
   },
-  "recommended_threshold": 0.17258387804031372,
+  "recommended_threshold": 0.13654935359954834,
+  "test_metrics_default_threshold": {
+    "precision": 1.0,
+    "recall": 0.08333333333333333,
+    "f1": 0.15384615384615385,
+    "roc_auc": 0.8638888888888889,
+    "pr_auc": 0.49444689108028494,
+    "accuracy": 0.9166666666666666
+  },
   "train_size": 405,
   "train_exits": 30,
   "test_size": 132,
   "test_exits": 12,
   "autogluon_version": "1.5.0",
-  "source_csv": "query_results_20260430_200359.csv",
-  "model_val_pr_auc": null,
-  "models_kept": [
-    "CatBoost_BAG_L1_FULL",
-    "ExtraTreesEntr_BAG_L1_FULL",
-    "LightGBMXT_BAG_L1_FULL",
-    "RandomForestEntr_BAG_L1_FULL",
-    "WeightedEnsemble_L3_FULL"
-  ],
-  "re_exported_at": "2026-04-30T20:30:11.317423"
+  "source_csv": "query_results_20260430_200359.csv"
 }

@@ -28,6 +28,7 @@ from autogluon.tabular import TabularPredictor
 EXPORT_DIR = Path(__file__).parent / 'model_export'
 META = json.loads((EXPORT_DIR / 'metadata.json').read_text())
 PREDICTOR_PATH = EXPORT_DIR / META['predictor_path']
+MODEL_NAME = META['model_name']
 THRESHOLD = META['recommended_threshold']
 FEATURE_COLUMNS = META['feature_columns']
 
@@ -40,7 +41,6 @@ def _load() -> TabularPredictor:
         _predictor = TabularPredictor.load(str(PREDICTOR_PATH))
     return _predictor
 
-
 def predict(features: pd.DataFrame, threshold: float | None = None) -> pd.DataFrame:
     """Run inference on a DataFrame with the same feature columns used at training.
 
@@ -49,14 +49,15 @@ def predict(features: pd.DataFrame, threshold: float | None = None) -> pd.DataFr
 
     Returns a DataFrame with `exit_120d_probability` and `exit_120d_prediction`.
     """
-    predictor = _load()
+    predictor = TabularPredictor.load('autogluon_models/autogluon_cast_120d')
     missing = [c for c in FEATURE_COLUMNS if c not in features.columns]
     if missing:
         raise ValueError(
             f"Input is missing {len(missing)} required feature(s); first few: {missing[:5]}"
         )
     X = features[FEATURE_COLUMNS]
-    proba = predictor.predict_proba(X, model=META['model_name'])
+    proba = predictor.predict_proba(X, model=MODEL_NAME)
+    print("HELLO HELLO" + str(proba))
     pos_col = proba.columns[-1]  # positive (=exit) class
     p = proba[pos_col].values
     thr = THRESHOLD if threshold is None else threshold
@@ -81,3 +82,4 @@ if __name__ == '__main__':
     out = predict(sample)
     print("\nSample inference (all-NaN input):")
     print(out)
+    

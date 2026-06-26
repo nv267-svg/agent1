@@ -1,2 +1,10 @@
 venv/
 tautoml-export/*.csv
+cat >> .gitignore << 'EOF'
+istio-1.30.1/
+*.csv
+*.pkl
+__pycache__/
+*.pyc
+.venv/
+EOF
