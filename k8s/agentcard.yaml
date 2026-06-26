@@ -1,0 +1,16 @@
+apiVersion: agent.kagenti.dev/v1alpha1
+kind: AgentCard
+metadata:
+  name: crop-yield-agent-card
+  namespace: team1
+  labels:
+    app.kubernetes.io/name: crop-yield-agent
+    app.kubernetes.io/managed-by: kubectl
+spec:
+  syncPeriod: 30s
+  identityBinding:
+    strict: false
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: crop-yield-agent

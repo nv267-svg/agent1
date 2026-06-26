@@ -1,0 +1,8 @@
+venv/
+tautoml-export/*.csv
+.venv/
+.venv_310/
+__pycache__/
+*.csv
+*.db
+*.pkl

@@ -1,0 +1,65 @@
+[Output also being written to: /Users/nandinivenkatesh/agent1/automl-export/analysis_output_20260624.txt]
+[Using CSV: query_results_20260430_200359.csv]
+================================================================================
+CAST DAIRY HERD — LACTATION EXIT PREDICTION
+================================================================================
+
+Workspace: /Users/nandinivenkatesh/agent1/automl-export
+Analysis Start: 2026-06-24T14:40:19.211622
+Feature window: DIM 1-21
+Exit windows: [60, 90, 120] days post-calving
+
+[STEP 1] Loading CSV data...
+  Loaded 359,705 rows x 101 columns
+  Date range: 2024-10-30 to 2026-04-29
+  Unique cows: 1,706
+
+[STEP 2] Building cow-lactation table...
+  Rows with valid lact + dim: 229,415
+  Unique cow-lactations: 1,418
+  Parity distribution:
+    Parity 1: 342 (24.1%)
+    Parity 2: 322 (22.7%)
+    Parity 3: 288 (20.3%)
+    Parity 4: 214 (15.1%)
+    Parity 5: 142 (10.0%)
+    Parity 6: 68 (4.8%)
+    Parity 7: 26 (1.8%)
+    Parity 8: 13 (0.9%)
+    Parity 9: 3 (0.2%)
+
+[STEP 3] Aggregating sensor features from DIM 1-21...
+  Records in DIM 1-21: 13,920
+  Sensor/numeric columns for aggregation: 80
+  Cow-lactations with early features: 779
+  Total features: 130
+  After requiring >= 7 early records: 750
+
+[STEP 4] Defining exit targets for each window...
+
+  60-day window:
+    Survived (stay >= 60d): 620
+    Exited (left < 60d):    27
+    Right-censored (excluded):   103
+    Exit rate: 4.2% (27/647)
+
+  90-day window:
+    Survived (stay >= 90d): 553
+    Exited (left < 90d):    36
+    Right-censored (excluded):   161
+    Exit rate: 6.1% (36/589)
+
+  120-day window:
+    Survived (stay >= 120d): 495
+    Exited (left < 120d):    42
+    Right-censored (excluded):   213
+    Exit rate: 7.8% (42/537)
+
+[STEP 5] Data quality summary...
+  Feature coverage (% non-null across cow-lactations):
+    >= 80%: 66 features
+    50-80%: 59 features
+    < 50%:  5 features (will be dropped)
+  Features retained: 125
+
+[STEP 6] Running AutoGluon for each exit window...
