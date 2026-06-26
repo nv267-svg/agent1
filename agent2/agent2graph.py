@@ -7,7 +7,7 @@ from sqlalchemy import create_engine
 import os
 import pandas as pd
 from .build_features import build_cow_lactation_features
-from inference_example import predict
+from .inference_example import predict
 import json
 
 
@@ -144,20 +144,18 @@ def analyze_node(state: AgentState) -> AgentState:
     """
     else:
         prompt = f"""
-       You are an assistant explaining a dairy cow model prediction to a farm
-    manager who is not technical.
- 
-        Return BOTH the natural language version and the raw data version. 
- 
-    Question:
-    {state['question']}
- 
-    Cow: animal_id={state.get('animal_id')}, lactation={state.get('lact')}, 
-    days in milk 1-21
- 
-    Model output:
-    {state.get('prediction')}
-    """
+        You are explaining a dairy cow exit-risk prediction to a farm worker.
+
+        Cow: animal_id={state['animal_id']}
+        lactation={state['lact']}, 
+        Days in milk analyzed were 1-21
+        
+        Model output:
+        {state['prediction']}. A 0 means the cow is predicted to stay in the herd, and a 1 means the cow is predicted to exit the herd within 120 days.
+
+        Write ONE short, plain-English sentence summarizing this for the farm worker.
+        Do not include JSON, code blocks, headers, or multiple versions. Just one sentence.
+        """
  
     try:
         response = llm.invoke([HumanMessage(content=prompt)])
@@ -185,7 +183,8 @@ def build_graph():
 
 cow_prediction_agent = build_graph()
 
-
+#test
+"""
 if __name__ == "__main__":
     out = cow_prediction_agent.invoke(
         {"question": "What's the prediction for cow 2075 in lactation 6?"}
@@ -194,3 +193,4 @@ if __name__ == "__main__":
         print("Error:", out["error"])
     print("\nAnswer:")
     print(out["answer"])
+"""

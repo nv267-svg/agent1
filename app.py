@@ -84,6 +84,8 @@ def ui():
     data_insights = ""
     prediction = ""
     answer = ""
+    prediction_html = ""
+
 
     if request.method == "POST":
 
@@ -124,7 +126,6 @@ def ui():
             animal_id = request.form["animal_id"]
             print(f">>> Got animal_id: {animal_id}", flush=True)
             try:
-                #the initial state of the agent is a dictionary with only the question so far
                 print(">>> Invoking agent...", flush=True)
                 final_state = cow_prediction_agent.invoke({
                     "question": animal_id,
@@ -139,14 +140,28 @@ def ui():
 
                 if final_state.get("error"):
                     error = final_state["error"]
-                else: 
-                    prediction = final_state.get("prediction", "")
+                else:
+                    pred_df = final_state.get("prediction")
                     answer = final_state.get("answer", "")
-                    if prediction and answer:
-                        df = pd.DataFrame([{"Prediction": prediction, "Answer": answer}])
-                        prediction_insights = f"Prediction for animal_id {animal_id}: {prediction}, Actual Answer: {answer}"
-                        prediction_html = df.to_html(index=False)
-                        prediction_html += f"<h3>Prediction Insights</h3><p>{prediction_insights}</p>"
+                    parsed_animal_id = final_state.get("animal_id", "")
+                    lact_value = final_state.get("lact", "")
+
+
+                    if pred_df is not None and not pred_df.empty:
+                        row = pred_df.iloc[0]
+                        probability = row["exit_120d_probability"]
+                        hard_prediction = row["exit_120d_prediction"]
+
+                        prediction_html = (
+                            f"<table border='1'>"
+                            f"<tr><th>Animal ID</th><th>Lactation</th>"
+                            f"<th>Exit Probability (120d)</th><th>Predicted Exit?</th></tr>"
+                            f"<tr><td>{parsed_animal_id}</td><td>{lact_value}</td>"
+                            f"<td>{probability:.4f}</td><td>{'Yes' if hard_prediction == 1 else 'No'}</td></tr>"
+                            f"</table>"
+                        )
+                        if answer:
+                            prediction_html += f"<h3>Explanation</h3><p>{answer}</p>"
                     else:
                         prediction_html = "<p>No results found.</p>"
             except Exception as e:
@@ -265,7 +280,7 @@ def a2a():
 # ── GET/ serves the HTML form for local testing and debugging. This is not used by Kagenti, which only interacts with the POST/ endpoint. 
 @app.route("/", methods=["GET"])
 def home_get():
-    return render_template_string(HTML, sql="", result="", data_insights="", error="")
+    return render_template_string(HTML, sql="", result="", data_insights="", error="", prediction_html="")
 
 PORT = int(os.getenv("PORT", 8000))
 
