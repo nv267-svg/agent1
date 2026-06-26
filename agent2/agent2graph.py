@@ -6,7 +6,7 @@ from langchain_core.messages import HumanMessage
 from sqlalchemy import create_engine
 import os
 import pandas as pd
-from build_features import build_cow_lactation_features
+from .build_features import build_cow_lactation_features
 from inference_example import predict
 import json
 
