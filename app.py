@@ -5,6 +5,7 @@ import os
 import uuid
 
 from graph import crop_agent
+from agent2.agent2graph import cow_prediction_agent
 
 app = Flask(__name__)
 
@@ -19,15 +20,30 @@ HTML = """
     <h1>Text-to-SQL for FotF Cow Data </h1>
 
     <form method="POST" action="/ui">
-        <input
-            type="text"
-            name="question"
-            placeholder="Ask a question..."
-            style="width:500px;"
-            required
-        >
-        <button type="submit">Submit</button>
-    </form>
+    <input type="hidden" name="form_type" value="question">
+    <input
+        type="text"
+        name="question"
+        placeholder="Ask a question..."
+        style="width:500px;"
+        required
+    >
+    <button type="submit">Submit</button>
+</form>
+
+<h3>Cow Exit Predictor</h3>
+
+<form method="POST" action="/ui">
+    <input type="hidden" name="form_type" value="prediction">
+    <input
+        type="text"
+        name="animal_id"
+        placeholder="Enter cow animal_id..."
+        style="width:500px;"
+        required
+    >
+    <button type="submit">Submit</button>
+</form>
 
     {% if question %}
         <h2>Question</h2>
@@ -42,6 +58,11 @@ HTML = """
     {% if result %}
         <h2>Results</h2>
         {{ result|safe }}
+    {% endif %}
+
+    {% if prediction_html %}
+        <h2>Prediction</h2>
+        {{ prediction_html|safe }}
     {% endif %}
 
 
@@ -61,35 +82,76 @@ def ui():
     result_html = ""
     error = ""
     data_insights = ""
+    prediction = ""
+    answer = ""
 
     if request.method == "POST":
 
-        question = request.form["question"]
+        form_type = request.form["form_type"]
 
-        try:
-            #the initial state of the agent is a dictionary with only the question so far
-            final_state = crop_agent.invoke({ 
-                "question": question,
-                "sql_query": None,
-                "rows": None,
-                "data_insights": None,
-                "error": None
-            })
+        if form_type == "question":
+            question = request.form["question"]
+            print(f">>> Got question: {question}", flush=True)
 
-            if final_state.get("error"):
-                error = final_state["error"]
-            else: 
-                sql_query = final_state.get("sql_query", "")
-                rows = final_state.get("rows") or []
-                data_insights = final_state.get("data_insights", "")
-                if rows:
-                    df = pd.DataFrame(rows)
-                    result_html = df.to_html(index=False)
-                    result_html += f"<h3>Data Insights</h3><p>{data_insights}</p>"
-                else:
-                    result_html = "<p>No results found.</p>"
-        except Exception as e:
-            error = str(e)
+            try:
+                #the initial state of the agent is a dictionary with only the question so far
+                print(">>> Invoking agent...", flush=True)
+                final_state = crop_agent.invoke({ 
+                    "question": question,
+                    "sql_query": None,
+                    "rows": None,
+                    "data_insights": None,
+                    "error": None
+                })
+                print(f">>> Agent finished: {final_state}", flush=True)
+
+                if final_state.get("error"):
+                    error = final_state["error"]
+                else: 
+                    sql_query = final_state.get("sql_query", "")
+                    rows = final_state.get("rows") or []
+                    data_insights = final_state.get("data_insights", "")
+                    if rows:
+                        df = pd.DataFrame(rows)
+                        result_html = df.to_html(index=False)
+                        result_html += f"<h3>Data Insights</h3><p>{data_insights}</p>"
+                    else:
+                        result_html = "<p>No results found.</p>"
+            except Exception as e:
+                error = str(e)
+
+        elif form_type == "prediction":
+            animal_id = request.form["animal_id"]
+            print(f">>> Got animal_id: {animal_id}", flush=True)
+            try:
+                #the initial state of the agent is a dictionary with only the question so far
+                print(">>> Invoking agent...", flush=True)
+                final_state = cow_prediction_agent.invoke({
+                    "question": animal_id,
+                    "lact": None,
+                    "df_raw": None,
+                    "features_df": None,
+                    "prediction": None,
+                    "answer": None,
+                    "error": None
+                })
+                print(f">>> Agent finished: {final_state}", flush=True)
+
+                if final_state.get("error"):
+                    error = final_state["error"]
+                else: 
+                    prediction = final_state.get("prediction", "")
+                    answer = final_state.get("answer", "")
+                    if prediction and answer:
+                        df = pd.DataFrame([{"Prediction": prediction, "Answer": answer}])
+                        prediction_insights = f"Prediction for animal_id {animal_id}: {prediction}, Actual Answer: {answer}"
+                        prediction_html = df.to_html(index=False)
+                        prediction_html += f"<h3>Prediction Insights</h3><p>{prediction_insights}</p>"
+                    else:
+                        prediction_html = "<p>No results found.</p>"
+            except Exception as e:
+                error = str(e)
+
 
     return render_template_string(HTML,
         question=question,
@@ -97,6 +159,7 @@ def ui():
         result=result_html,
         data_insights=data_insights,
         error=error,
+        prediction_html=prediction_html
     )
 
 #new stuff for Kagenti A2A 
