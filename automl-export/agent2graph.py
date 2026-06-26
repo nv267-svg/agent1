@@ -20,8 +20,6 @@ class AgentState(TypedDict):
     question: str
     animal_id: Optional[str]
     lact: Optional[str]
-    dim_min: Optional[int]
-    dim_max: Optional[int]
     df_raw: Optional[pd.DataFrame]
     features_df: Optional[pd.DataFrame]
     prediction: Optional[dict]
@@ -69,8 +67,6 @@ Question:
             **state,
             "animal_id": str(animal_id),
             "lact": str(lact),
-            "dim_min": int(1),
-            "dim_max": int(21),
             "error": None,
         }
     except Exception as e:
@@ -92,7 +88,7 @@ def fetch_data_node(state: AgentState) -> AgentState:
         df_raw = pd.read_sql(f"""
             SELECT * FROM aggregated_data.one_row_per_cow_per_day
             WHERE animal_id = '{state["animal_id"]}' AND lact = '{state["lact"]}'
-            AND dim BETWEEN {state["dim_min"]} AND {state["dim_max"]}
+            AND dim BETWEEN 1 AND 21
         """, engine)
  
     except Exception as e:
@@ -105,7 +101,7 @@ def fetch_data_node(state: AgentState) -> AgentState:
             "df_raw": df_raw,
             "error": (
                 f"No rows found for animal_id={state['animal_id']}, "
-                f"lact={state['lact']}, dim {state['dim_min']}-{state['dim_max']}."
+                f"lact={state['lact']}, dim 1-21."
             ),
         }
  
@@ -157,7 +153,7 @@ def analyze_node(state: AgentState) -> AgentState:
     {state['question']}
  
     Cow: animal_id={state.get('animal_id')}, lactation={state.get('lact')}, 
-    days in milk {state.get('dim_min')}-{state.get('dim_max')}
+    days in milk 1-21
  
     Model output:
     {state.get('prediction')}
