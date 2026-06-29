@@ -90,6 +90,7 @@ def fetch_data_node(state: AgentState) -> AgentState:
             WHERE animal_id = '{state["animal_id"]}' AND lact = '{state["lact"]}'
             AND dim BETWEEN 1 AND 21
         """, engine)
+
  
     except Exception as e:
         print(f"Error connecting to database: {e}")
@@ -130,6 +131,9 @@ def predict_node(state: AgentState) -> AgentState:
         return {**state, "prediction": result, "error": None}
     except Exception as e:
         return {**state, "prediction": None, "error": f"Prediction error: {str(e)}"}
+    
+#node 4: trends on the data to pass to LLM 
+
 
 # node 5: analyze the prediction in natural language 
 def analyze_node(state: AgentState) -> AgentState:
@@ -143,6 +147,31 @@ def analyze_node(state: AgentState) -> AgentState:
     Problem: {state['error']}
     """
     else:
+        df_raw = state.get("df_raw")
+        if df_raw is None or len(df_raw) == 0:
+            return {**state, "answer": "No data available to explain prediction."}
+
+        df_raw = df_raw.sort_values("dim")
+
+        summary = {
+            "total_lifetime_yield": df_raw["total_lifetime_yield"].mean(),
+            "min_raw_activity": df_raw["min_raw_activity_data"].mean(),
+            "yield_session_1": df_raw["yield_yesterday_session_1"].mean(),
+            "n_early_records": len(df_raw),
+            "max_smx_heat_index": df_raw["max_smx_heat_index"].mean(),
+            "min_activity_change": df_raw["min_activity_change"].mean(),
+            "avg_daily_yield_7d": df_raw["avg_daily_yield_last_7d"].mean(),
+            "parity": df_raw["lact"].iloc[0],
+            "avg_temp": df_raw["avg_temp"].mean(),
+            "max_temp": df_raw["max_temp"].mean(),
+            "dev_pct_avg_7d": df_raw["yesterday_deviation_pct_from_avg_last_7d"].mean(),
+            "max_health_index_non_milk": df_raw["max_health_index_for_non_milked_cows"].mean(),
+            "avg_activity_change": df_raw["avg_activity_change"].mean(),
+            "min_activity_change_2hr": df_raw["min_activity_change_by_2_hours"].mean(),
+            "daily_activity": df_raw["daily_activity"].mean()
+        }
+       
+
         prompt = f"""
         You are explaining a dairy cow exit-risk prediction to a farm worker.
 
@@ -153,7 +182,10 @@ def analyze_node(state: AgentState) -> AgentState:
         Model output:
         {state['prediction']}. A 0 means the cow is predicted to stay in the herd, and a 1 means the cow is predicted to exit the herd within 120 days.
 
-        Write ONE short, plain-English sentence summarizing this for the farm worker.
+        Data: 
+        {summary}
+
+        EXPLAIN in multiple, plain-English sentences summarizing this for the farm worker and explain the factors that result in the output predicted using the data features passed in as a summary and USE THE DATA PARTICULARLY AND ANALYZE.
         Do not include JSON, code blocks, headers, or multiple versions. Just one sentence.
         """
  
