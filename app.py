@@ -9,6 +9,8 @@ from agent2.agent2graph import cow_prediction_agent
 
 app = Flask(__name__)
 
+AGENT_MODE = os.getenv("AGENT_MODE", "crop")  # "crop" or "cow"
+
 HTML = """
 <!DOCTYPE html>
 <html>
@@ -82,10 +84,8 @@ def ui():
     result_html = ""
     error = ""
     data_insights = ""
-    prediction = ""
     answer = ""
     prediction_html = ""
-
 
     if request.method == "POST":
 
@@ -165,7 +165,7 @@ def ui():
                     else:
                         prediction_html = "<p>No results found.</p>"
             except Exception as e:
-                error = str(e)
+                prediction_html = "<p>An error occurred.</p>"
 
 
     return render_template_string(HTML,
@@ -183,8 +183,8 @@ def ui():
 AGENT_CARD = {
     "name": "crop-yield-agent",
     "description": (
-        "Text-to-SQL agent for crop yield data. "
-        "Ask natural language questions about crop yields, regions, rainfall, and more."
+        "Text-to-SQL agent for dairy cow herd data. "
+        "Ask natural language questions about cow lactation, herd metrics, and more."
     ),
     "version": "1.0.0",
     "url": "http://crop-yield-agent.team1.svc.cluster.local:8080",
@@ -193,14 +193,38 @@ AGENT_CARD = {
     "defaultOutputModes": ["text"],
     "skills": [
         {
-            "id":          "crop_yield_query",
-            "name":        "Crop Yield Query",
-            "description": "Answer questions about crop yields using SQL over a SQLite database.",
-            "tags":        ["sql", "agriculture", "crop", "yield"],
+            "id":          "cow_data_query",
+            "name":        "Cow Data Query",
+            "description": "Answer questions about dairy cow herd data using SQL over a database.",
+            "tags":        ["sql", "dairy", "cow", "herd"],
             "examples": [
-                "What are the top 5 crops by average yield?",
-                "Which region has the highest rainfall?",
-                "Show me all crops grown with irrigation in the North region.",
+                "What is the average days in milk for lactation 3?",
+                "Show me all cows with dim between 1 and 21.",
+            ],
+        }
+    ],
+}
+
+COW_AGENT_CARD = {
+    "name": "cow-exit-prediction-agent",
+    "description": (
+        "Predicts the probability that a dairy cow will exit the herd within 120 days, "
+        "using AutoGluon ensemble models over lactation and herd features."
+    ),
+    "version": "1.0.0",
+    "url": "http://cow-exit-prediction-agent.team1.svc.cluster.local:8080",
+    "capabilities": {"streaming": False},
+    "defaultInputModes":  ["text"],
+    "defaultOutputModes": ["text"],
+    "skills": [
+        {
+            "id":          "cow_exit_prediction",
+            "name":        "Cow Exit Prediction",
+            "description": "Predict 120-day herd-exit probability for a given cow by animal_id and lactation.",
+            "tags":        ["prediction", "dairy", "cow", "autogluon"],
+            "examples": [
+                "Will animal_id 4521 exit the herd in the next 120 days?",
+                "What's the prediction for cow 2075 in lactation 6?",
             ],
         }
     ],
@@ -209,11 +233,11 @@ AGENT_CARD = {
 # This endpoint serves the agent card that describes the agent's capabilities to Kagenti.
 @app.route("/.well-known/agent-card.json")
 def agent_card():
-    return jsonify(AGENT_CARD)
+    card = COW_AGENT_CARD if AGENT_MODE == "cow" else AGENT_CARD
+    return jsonify(card)
 
 # This endpoint receives messages from Kagenti, extracts the question, runs it through the agent, and returns the answer in the expected format.
-@app.route("/", methods=["POST"])
-def a2a(): 
+def a2a_crop(body): 
     body = request.get_json(silent=True) or {}
     print(f">>> FULL BODY: {body}", flush=True)
     
@@ -276,6 +300,73 @@ def a2a():
             "error": {"code": -32603, "message": str(e)},
         }), 500
 
+
+def a2a_cow(body):
+    try:
+        if body.get("jsonrpc") != "2.0" or body.get("method") != "message/send":
+            return jsonify({
+                "jsonrpc": "2.0",
+                "id":    body.get("id"),
+                "error": {"code": -32601, "message": "Method not found"},
+            }), 400
+
+        parts    = body.get("params", {}).get("message", {}).get("parts", [])
+        question = next((p["text"] for p in parts if p.get("type") == "text" or p.get("kind") == "text"), "")
+        print(f">>> QUESTION: {question}", flush=True)
+
+        if not question:
+            return jsonify({
+                "jsonrpc": "2.0",
+                "id":    body.get("id"),
+                "error": {"code": -32602, "message": "No text part found"},
+            }), 400
+
+        final_state = cow_prediction_agent.invoke({
+            "question": question,
+            "animal_id": None,
+            "lact": None,
+            "df_raw": None,
+            "features_df": None,
+            "prediction": None,
+            "answer": None,
+            "error": None
+        })
+
+        print(f">>> AGENT2 DONE: {final_state}", flush=True)
+        if final_state.get("error"):
+            answer = f"Error: {final_state['error']}"
+        else:
+            answer = final_state.get("answer", "No explanation generated.")
+
+        print(f">>> AGENT2 ANSWER: {answer[:100]}", flush=True)
+
+        return jsonify({
+            "jsonrpc": "2.0",
+            "id": body.get("id"),
+            "result": {
+                "id":     str(uuid.uuid4()),
+                "status": {"state": "completed"},
+                "parts": [{"kind": "text", "text": answer}],
+            },
+        })
+    except Exception as e:
+        print(f">>> EXCEPTION: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "jsonrpc": "2.0",
+            "id": body.get("id"),
+            "error": {"code": -32603, "message": str(e)},
+        }), 500
+
+
+@app.route("/", methods=["POST"])
+def a2a():
+    body = request.get_json(silent=True) or {}
+    if AGENT_MODE == "cow":
+        return a2a_cow(body)
+    else:
+        return a2a_crop(body)
 
 # ── GET/ serves the HTML form for local testing and debugging. This is not used by Kagenti, which only interacts with the POST/ endpoint. 
 @app.route("/", methods=["GET"])
