@@ -134,8 +134,6 @@ def a2a_crop(body):
        }), 500
 
 
-
-
 def a2a_cow(body):
    try:
        if body.get("jsonrpc") != "2.0" or body.get("method") != "message/send":
@@ -203,7 +201,14 @@ def a2a_cow(body):
 
 @app.route("/", methods=["POST"])
 def a2a():
-    
+    ''''
+    body = request.get_json(silent=True) or {}
+    if AGENT_MODE == "cow":
+       return a2a_cow(body)
+    else:
+       return a2a_crop(body)
+
+    '''
     body = request.get_json(silent=True) or {}
     parts = body.get("params", {}).get("message", {}).get("parts", [])
     query = next((p["text"] for p in parts if p.get("type") in ["text", "kind"]), "")
