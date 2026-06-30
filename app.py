@@ -4,8 +4,8 @@ import pandas as pd
 import os
 import uuid
 
-from graph import crop_agent
-from agent2.agent2graph import cow_prediction_agent
+from graph import crop_agent, AGENT_CARD
+from agent2.agent2graph import cow_prediction_agent, COW_AGENT_CARD
 
 app = Flask(__name__)
 
@@ -178,57 +178,6 @@ def ui():
     )
 
 #new stuff for Kagenti A2A 
-
-
-AGENT_CARD = {
-    "name": "crop-yield-agent",
-    "description": (
-        "Text-to-SQL agent for dairy cow herd data. "
-        "Ask natural language questions about cow lactation, herd metrics, and more."
-    ),
-    "version": "1.0.0",
-    "url": "http://crop-yield-agent.team1.svc.cluster.local:8080",
-    "capabilities": {"streaming": False},
-    "defaultInputModes":  ["text"],
-    "defaultOutputModes": ["text"],
-    "skills": [
-        {
-            "id":          "cow_data_query",
-            "name":        "Cow Data Query",
-            "description": "Answer questions about dairy cow herd data using SQL over a database.",
-            "tags":        ["sql", "dairy", "cow", "herd"],
-            "examples": [
-                "What is the average days in milk for lactation 3?",
-                "Show me all cows with dim between 1 and 21.",
-            ],
-        }
-    ],
-}
-
-COW_AGENT_CARD = {
-    "name": "cow-exit-prediction-agent",
-    "description": (
-        "Predicts the probability that a dairy cow will exit the herd within 120 days, "
-        "using AutoGluon ensemble models over lactation and herd features."
-    ),
-    "version": "1.0.0",
-    "url": "http://cow-exit-prediction-agent.team1.svc.cluster.local:8080",
-    "capabilities": {"streaming": False},
-    "defaultInputModes":  ["text"],
-    "defaultOutputModes": ["text"],
-    "skills": [
-        {
-            "id":          "cow_exit_prediction",
-            "name":        "Cow Exit Prediction",
-            "description": "Predict 120-day herd-exit probability for a given cow by animal_id and lactation.",
-            "tags":        ["prediction", "dairy", "cow", "autogluon"],
-            "examples": [
-                "Will animal_id 4521 exit the herd in the next 120 days?",
-                "What's the prediction for cow 2075 in lactation 6?",
-            ],
-        }
-    ],
-}
  
 # This endpoint serves the agent card that describes the agent's capabilities to Kagenti.
 @app.route("/.well-known/agent-card.json")

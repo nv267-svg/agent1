@@ -13,6 +13,8 @@ OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 OLLAMA_MODEL    = os.getenv("OLLAMA_MODEL",    "llama3.2:3b-instruct-fp16")
 DB_PATH         = os.getenv("DB_PATH",         "crop.db")
 
+
+
 SCHEMA = """
 Table: aggregated_data.one_row_per_cow_per_day
 
@@ -123,6 +125,32 @@ one_row_per_cow_perDay.costPerHead
 one_row_per_cow_perDay.env_temp_1
 one_row_per_cow_perDay.env_rh_1
 """
+
+
+AGENT_CARD = {
+    "name": "crop-yield-agent",
+    "description": (
+        "Text-to-SQL agent for dairy cow herd data. "
+        "Ask natural language questions about cow lactation, herd metrics, and more."
+    ),
+    "version": "1.0.0",
+    "url": "http://crop-yield-agent.team1.svc.cluster.local:8080",
+    "capabilities": {"streaming": False},
+    "defaultInputModes":  ["text"],
+    "defaultOutputModes": ["text"],
+    "skills": [
+        {
+            "id":          "cow_data_query",
+            "name":        "Cow Data Query",
+            "description": "Answer questions about dairy cow herd data using SQL over a database.",
+            "tags":        ["sql", "dairy", "cow", "herd"],
+            "examples": [
+                "What is the average days in milk for lactation 3?",
+                "Show me all cows with dim between 1 and 21.",
+            ],
+        }
+    ],
+}
 
 class AgentState(TypedDict):
     question: str

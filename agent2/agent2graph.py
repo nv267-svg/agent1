@@ -15,6 +15,30 @@ OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 OLLAMA_MODEL    = os.getenv("OLLAMA_MODEL",    "llama3.2:3b-instruct-fp16")
 
 
+COW_AGENT_CARD = {
+    "name": "cow-exit-prediction-agent",
+    "description": (
+        "Predicts the probability that a dairy cow will exit the herd within 120 days, "
+        "using AutoGluon ensemble models over lactation and herd features."
+    ),
+    "version": "1.0.0",
+    "url": "http://cow-exit-prediction-agent.team1.svc.cluster.local:8080",
+    "capabilities": {"streaming": False},
+    "defaultInputModes":  ["text"],
+    "defaultOutputModes": ["text"],
+    "skills": [
+        {
+            "id":          "cow_exit_prediction",
+            "name":        "Cow Exit Prediction",
+            "description": "Predict 120-day herd-exit probability for a given cow by animal_id and lactation.",
+            "tags":        ["prediction", "dairy", "cow", "autogluon"],
+            "examples": [
+                "Will animal_id 4521 exit the herd in the next 120 days?",
+                "What's the prediction for cow 2075 in lactation 6?",
+            ],
+        }
+    ],
+}
  
 class AgentState(TypedDict):
     question: str
