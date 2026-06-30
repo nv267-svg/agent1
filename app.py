@@ -6,11 +6,12 @@ import uuid
 
 from graph import crop_agent, AGENT_CARD
 from agent2.agent2graph import cow_prediction_agent, COW_AGENT_CARD
-from orchestrator.orchestrator_graph import orchestrator_agent, ORCHESTRATOR_AGENT_CARD
+from orchestrator.orchestrator_graph import orchestrator_graph, ORCHESTRATOR_AGENT_CARD
 
 app = Flask(__name__)
 
-AGENT_MODE = os.getenv("AGENT_MODE", "crop")  
+AGENT_MODE = os.getenv("AGENT_MODE", "crop")  # "cow", "crop", or "orchestrator"
+
 
 HTML = """
 <!DOCTYPE html>
@@ -54,14 +55,25 @@ def ping():
     return "Flask is working", 200
 @app.route("/ui", methods=["GET", "POST"])
 def ui():
-    final_output = ""
+    question = ""
+    result = ""
     if request.method == "POST":
-        query = request.form.get("query")
-        result = orchestrator_agent.invoke({"question": query})
-        final_output = result.get("answer", "No response generated.")
-        
-    return render_template_string(HTML, final_output=final_output)
+        question = request.form.get("question", "")
+        final_state = orchestrator_graph.invoke({
+            "question": question,
+            "target_agent": None,
+            "answer": None,
+            "error": None,
+        })
+    if final_state.get("error"):
+        result = f"<p>Error: {final_state['error']}</p>"
+    else:
+        result = f"<p>{final_state['answer'] or 'No response generated.'}</p>"
+    
+    return render_template_string(HTML, question=question, result=result)
 
+
+    
 def a2a_crop(body):
    body = request.get_json(silent=True) or {}
    print(f">>> FULL BODY: {body}", flush=True)
@@ -199,35 +211,86 @@ def a2a_cow(body):
        }), 500
 
 
+def a2a_orchestrator(body):
+    print(f">>> ORCHESTRATOR FULL BODY: {body}", flush=True)
+    try:
+        if body.get("jsonrpc") != "2.0" or body.get("method") != "message/send":
+            return jsonify({
+                "jsonrpc": "2.0",
+                "id":    body.get("id"),
+                "error": {"code": -32601, "message": "Method not found"},
+            }), 400
+
+        parts    = body.get("params", {}).get("message", {}).get("parts", [])
+        question = next((p["text"] for p in parts if p.get("type") == "text" or p.get("kind") == "text"), "")
+        print(f">>> QUESTION: {question}", flush=True)
+
+        if not question:
+            return jsonify({
+                "jsonrpc": "2.0",
+                "id":    body.get("id"),
+                "error": {"code": -32602, "message": "No text part found"},
+            }), 400
+
+        final_state = orchestrator_agent.invoke({
+            "question": question,
+            "target_agent": None,
+            "answer": None,
+            "error": None,
+        })
+
+        print(f">>> ORCHESTRATOR DONE: {final_state}", flush=True)
+
+        if final_state.get("error"):
+            answer = f"Error: {final_state['error']}"
+        else:
+            answer = final_state.get("answer", "No answer generated.")
+
+        return jsonify({
+            "jsonrpc": "2.0",
+            "id": body.get("id"),
+            "result": {
+                "id":     str(uuid.uuid4()),
+                "status": {"state": "completed"},
+                "parts": [{"kind": "text", "text": answer}],
+            },
+        })
+    except Exception as e:
+        print(f">>> EXCEPTION: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "jsonrpc": "2.0",
+            "id": body.get("id"),
+            "error": {"code": -32603, "message": str(e)},
+        }), 500
+    
+@app.route("/.well-known/agent-card.json")
+def agent_card():
+    if AGENT_MODE == "cow":
+        card = COW_AGENT_CARD
+    elif AGENT_MODE == "orchestrator":
+        card = ORCHESTRATOR_AGENT_CARD
+    else:
+        card = AGENT_CARD
+    return jsonify(card)
+
+#the ui only uses the orchestrator agent mode, but depending on which agent the orchestrator calls, 
+#then the other a2a bodies will be called
 @app.route("/", methods=["POST"])
 def a2a():
-    ''''
     body = request.get_json(silent=True) or {}
     if AGENT_MODE == "cow":
-       return a2a_cow(body)
+        return a2a_cow(body)
+    elif AGENT_MODE == "orchestrator":
+        return a2a_orchestrator(body)
     else:
-       return a2a_crop(body)
+        return a2a_crop(body)
 
-    '''
-    body = request.get_json(silent=True) or {}
-    parts = body.get("params", {}).get("message", {}).get("parts", [])
-    query = next((p["text"] for p in parts if p.get("type") in ["text", "kind"]), "")
-    
-    result = orchestrator_agent.invoke({"question": query})
-    answer = result.get("answer", "No response generated.")
-    
-    return jsonify({
-        "jsonrpc": "2.0",
-        "id": body.get("id"),
-        "result": {
-            "status": {"state": "completed"},
-            "parts": [{"kind": "text", "text": answer}]
-        }
-    })
 
 @app.route("/", methods=["GET"])
 def home():
-    return render_template_string(HTML)
+    return render_template_string(HTML, question="", result="")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 8000)), debug=True)

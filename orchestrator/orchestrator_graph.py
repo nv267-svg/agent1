@@ -13,11 +13,37 @@ import pandas as pd
 from graph import crop_agent, AGENT_CARD as CROP_AGENT_CARD
 from agent2.agent2graph import cow_prediction_agent, COW_AGENT_CARD
 
+ORCHESTRATOR_AGENT_CARD = {
+    "name": "agent-orchestrator",
+    "description": (
+        "Routes dairy farm questions to the right specialist agent — "
+        "either the cow data SQL agent or the cow exit-prediction agent."
+    ),
+    "version": "1.0.0",
+    "url": "http://agent-orchestrator.team1.svc.cluster.local:8080",
+    "capabilities": {"streaming": False},
+    "defaultInputModes":  ["text"],
+    "defaultOutputModes": ["text"],
+    "skills": [
+        {
+            "id":          "route_question",
+            "name":        "Route Question",
+            "description": "Classify and route a question to the appropriate dairy agent.",
+            "tags":        ["routing", "orchestration", "dairy"],
+            "examples": [
+                "What is the average days in milk for lactation 3?",
+                "Will animal_id 4521 exit the herd in the next 120 days?",
+            ],
+        }
+    ],
+}
+
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 OLLAMA_MODEL    = os.getenv("OLLAMA_MODEL",    "llama3.2:3b-instruct-fp16")
 COW_AGENT_URL = os.getenv("COW_AGENT_URL", "http://cow-exit-prediction-agent.team1.svc.cluster.local:8080")
-CROP_AGENT_URL = os.getenv("CROP_AGENT_URL", "http://crop-agent.team1.svc.cluster.local:8080")
-
+CROP_AGENT_URL = os.getenv(
+    "CROP_AGENT_URL", "http://crop-yield-agent.team1.svc.cluster.local:8080/"
+)
 class OrchestratorState(TypedDict):
     question: str
     chosen_agent: Optional[str] #Crop or cow
